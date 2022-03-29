@@ -52,9 +52,16 @@ final class H264Decoder {
         }
     }
     private var invalidateSession = true
-    private var callback: VTDecompressionOutputCallback = {(decompressionOutputRefCon: UnsafeMutableRawPointer?, _: UnsafeMutableRawPointer?, status: OSStatus, infoFlags: VTDecodeInfoFlags, imageBuffer: CVBuffer?, presentationTimeStamp: CMTime, duration: CMTime) in
+    private var callback: VTDecompressionOutputCallback = {(decompressionOutputRefCon: UnsafeMutableRawPointer?, sourceFrameRefCon: UnsafeMutableRawPointer?, status: OSStatus, infoFlags: VTDecodeInfoFlags, imageBuffer: CVBuffer?, presentationTimeStamp: CMTime, duration: CMTime) in
+        
+        // LiveStage: this is callback for h264 decoder - read the timstamp from source ref and pass it along
+        let absoluteTime = sourceFrameRefCon != nil ? Unmanaged<NSString>.fromOpaque(sourceFrameRefCon!).takeRetainedValue() as String : nil// String(cString: sourceFrameRefCon!) //(sourceFrameRefCon as NSString).doubleValue
+        
+        
+//        print("pawan: getattachment: \(String(describing: sampleBuffer.getAttachmentValue(for: "absoluteTime" as NSString)))")
+        
         let decoder: H264Decoder = Unmanaged<H264Decoder>.fromOpaque(decompressionOutputRefCon!).takeUnretainedValue()
-        decoder.didOutputForSession(status, infoFlags: infoFlags, imageBuffer: imageBuffer, presentationTimeStamp: presentationTimeStamp, duration: duration)
+        decoder.didOutputForSession(status, infoFlags: infoFlags, imageBuffer: imageBuffer, presentationTimeStamp: presentationTimeStamp, duration: duration, absoluteTime: absoluteTime)
     }
 
     private var _session: VTDecompressionSession?
@@ -90,6 +97,10 @@ final class H264Decoder {
     }
 
     func decodeSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> OSStatus {
+        
+        // LiveStage: this is decode from network step - read the timestamp from samplebuffer and pass it to source frame ref of decoder
+        let absoluteTimeString = sampleBuffer.getAttachmentValue(for: "absoluteTime" as NSString)
+        
         if invalidateSession {
             session = nil
             needsSync.mutate { $0 = true }
@@ -105,12 +116,14 @@ final class H264Decoder {
             session,
             sampleBuffer: sampleBuffer,
             flags: H264Decoder.defaultDecodeFlags,
-            frameRefcon: nil,
+            frameRefcon: absoluteTimeString != nil ? Unmanaged.passRetained(absoluteTimeString! as NSString).toOpaque() : nil,
             infoFlagsOut: &flagsOut
         )
     }
 
-    func didOutputForSession(_ status: OSStatus, infoFlags: VTDecodeInfoFlags, imageBuffer: CVImageBuffer?, presentationTimeStamp: CMTime, duration: CMTime) {
+    func didOutputForSession(_ status: OSStatus, infoFlags: VTDecodeInfoFlags, imageBuffer: CVImageBuffer?, presentationTimeStamp: CMTime, duration: CMTime, absoluteTime: String?) {
+        
+        // LiveStage: this is network step - embed timestamp in the sample buffer
         guard let imageBuffer: CVImageBuffer = imageBuffer, status == noErr else {
             return
         }
@@ -142,6 +155,10 @@ final class H264Decoder {
 
         guard let buffer: CMSampleBuffer = sampleBuffer else {
             return
+        }
+        
+        if let absoluteTime = absoluteTime {
+            buffer.setAttachmentValue(for: "absoluteTime" as NSString, value: (absoluteTime as NSString).doubleValue)
         }
 
         if isBaseline {

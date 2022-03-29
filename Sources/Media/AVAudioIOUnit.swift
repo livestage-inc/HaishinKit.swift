@@ -184,6 +184,6 @@ extension AVAudioIOUnit: AudioCodecDelegate {
         if let mixer = mixer {
             mixer.delegate?.mixer(mixer, didOutput: buffer, presentationTimeStamp: presentationTimeStamp)
         }
-        mixer?.mediaLink.enqueueAudio(buffer)
+        mixer?.mediaLink.enqueueAudio(buffer, presentationTimeStamp: presentationTimeStamp)
     }
 }

@@ -19,7 +19,7 @@ public enum FLVTagType: UInt8 {
         case .audio:
             return 2
         case .video:
-            return 5
+            return 13
         case .data:
             return 0
         }

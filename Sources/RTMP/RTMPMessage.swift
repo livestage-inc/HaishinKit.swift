@@ -650,6 +650,10 @@ final class RTMPVideoMessage: RTMPMessage {
         var compositionTime = isBaseline ? 0 : Int32(data: [0] + payload[2..<5]).bigEndian
         compositionTime <<= 8
         compositionTime /= 256
+        
+        // this is the network step - read the absolute time in header and attach to sample buffer below
+        let absoluteTime = fromByteArray([UInt8](payload[5..<13]), Double.self)
+        print("pawan: \(absoluteTime)")
 
         switch type {
         case .zero:
@@ -707,6 +711,8 @@ final class RTMPVideoMessage: RTMPMessage {
             }
             if let sampleBuffer = sampleBuffer {
                 sampleBuffer.isNotSync = !(payload[0] >> 4 == FLVFrameType.key.rawValue)
+                sampleBuffer.setAttachmentValue(for: "absoluteTime" as NSString, value: absoluteTime)
+//                print("pawan: getattachment: \(String(describing: sampleBuffer.getAttachmentValue(for: "absoluteTime" as NSString)))")
                 stream.mixer.mediaLink.enqueueVideo(sampleBuffer)
             }
             if stream.mixer.mediaLink.isPaused && stream.mixer.audioIO.codec.formatDescription == nil {

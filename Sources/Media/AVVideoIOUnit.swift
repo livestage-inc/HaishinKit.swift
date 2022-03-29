@@ -1,5 +1,6 @@
 import AVFoundation
 import CoreImage
+import UIKit
 
 final class AVVideoIOUnit: NSObject, AVIOUnit {
     static let defaultAttributes: [NSString: NSObject] = [
@@ -399,6 +400,10 @@ extension AVVideoIOUnit {
                 CVPixelBufferUnlockBaseAddress(imageBuffer, [])
             }
         }
+        
+        // This came from the capture output step so lets record the timestamp and feed the frame for livestage storage
+        let absoluteTime = Date.timeIntervalSinceReferenceDate
+        LiveStageFastStorage.shared.feedIn(buffer: buffer, timestamp: absoluteTime)
 
         if renderer != nil || !effects.isEmpty {
             let image: CIImage = effect(buffer, info: sampleBuffer)
@@ -422,7 +427,7 @@ extension AVVideoIOUnit {
         encoder.encodeImageBuffer(
             imageBuffer ?? buffer,
             presentationTimeStamp: sampleBuffer.presentationTimeStamp,
-            duration: sampleBuffer.duration
+            duration: sampleBuffer.duration, absoluteTimestamp: absoluteTime
         )
 
         mixer?.recorder.appendPixelBuffer(imageBuffer ?? buffer, withPresentationTime: sampleBuffer.presentationTimeStamp)

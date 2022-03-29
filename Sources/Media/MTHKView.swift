@@ -89,6 +89,15 @@ extension MTHKView: MTKViewDelegate {
             commandBuffer.commit()
             return
         }
+        
+        // draw loop of viewer - get the embeded timestamp from sample buffer
+        
+        if let timestampString = currentSampleBuffer!.getAttachmentValue(for: "absoluteTime" as NSString) {
+            let timestamp = (timestampString as NSString).doubleValue
+            LiveStageViewer.shared.currentDrawnTimestamp = timestamp
+            print("pawan: draw: \(timestamp)")
+        }
+        
         let displayImage = CIImage(cvPixelBuffer: imageBuffer)
         var scaleX: CGFloat = 0
         var scaleY: CGFloat = 0

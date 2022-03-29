@@ -8,7 +8,7 @@ import UIKit
 
 public protocol VideoCodecDelegate: AnyObject {
     func videoCodec(_ codec: VideoCodec, didSet formatDescription: CMFormatDescription?)
-    func videoCodec(_ codec: VideoCodec, didOutput sampleBuffer: CMSampleBuffer)
+    func videoCodec(_ codec: VideoCodec, didOutput sampleBuffer: CMSampleBuffer, absoluteTime: Double?)
 }
 
 // MARK: -
@@ -187,7 +187,7 @@ public final class VideoCodec {
         return properties
     }
 
-    private var callback: VTCompressionOutputCallback = {(outputCallbackRefCon: UnsafeMutableRawPointer?, _: UnsafeMutableRawPointer?, status: OSStatus, _: VTEncodeInfoFlags, sampleBuffer: CMSampleBuffer?) in
+    private var callback: VTCompressionOutputCallback = {(outputCallbackRefCon: UnsafeMutableRawPointer?, sourceFrameRefCon: UnsafeMutableRawPointer?, status: OSStatus, _: VTEncodeInfoFlags, sampleBuffer: CMSampleBuffer?) in
         guard
             let refcon: UnsafeMutableRawPointer = outputCallbackRefCon,
             let sampleBuffer: CMSampleBuffer = sampleBuffer, status == noErr else {
@@ -197,9 +197,18 @@ public final class VideoCodec {
                 }
             return
         }
+        
+        // This is the encoding output get the timestamp from source reference and embed it into sample buffer
+        let absoluteTime = sourceFrameRefCon != nil ? Unmanaged<NSString>.fromOpaque(sourceFrameRefCon!).takeRetainedValue() as String : nil
+        
+//        print("absoluteTime: \(absoluteTime)")
+//        if let absoluteTime = absoluteTime {
+//            sampleBuffer.setAttachmentValue(for: "absoluteTime" as NSString, value: (absoluteTime as NSString).doubleValue)
+//        }
+        
         let codec: VideoCodec = Unmanaged<VideoCodec>.fromOpaque(refcon).takeUnretainedValue()
         codec.formatDescription = CMSampleBufferGetFormatDescription(sampleBuffer)
-        codec.delegate?.videoCodec(codec, didOutput: sampleBuffer)
+        codec.delegate?.videoCodec(codec, didOutput: sampleBuffer, absoluteTime: (absoluteTime as? NSString)?.doubleValue)
     }
 
     private var _session: VTCompressionSession?
@@ -241,7 +250,11 @@ public final class VideoCodec {
         settings.observer = self
     }
 
-    func encodeImageBuffer(_ imageBuffer: CVImageBuffer, presentationTimeStamp: CMTime, duration: CMTime) {
+    func encodeImageBuffer(_ imageBuffer: CVImageBuffer, presentationTimeStamp: CMTime, duration: CMTime, absoluteTimestamp: Double = 0.0) {
+        
+        // this is the capture output frame image, embed the timestamp in source ref of encoder
+        let absoluteTimeString = "\(absoluteTimestamp)"
+        
         guard isRunning.value && locked == 0 else {
             return
         }
@@ -258,7 +271,7 @@ public final class VideoCodec {
             presentationTimeStamp: presentationTimeStamp,
             duration: duration,
             frameProperties: nil,
-            sourceFrameRefcon: nil,
+            sourceFrameRefcon: Unmanaged.passRetained(absoluteTimeString as NSString).toOpaque(),
             infoFlagsOut: &flags
         )
         if !muted || lastImageBuffer == nil {

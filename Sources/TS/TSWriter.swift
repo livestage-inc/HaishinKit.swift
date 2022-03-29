@@ -254,7 +254,7 @@ extension TSWriter: VideoCodecDelegate {
         videoConfig = AVCConfigurationRecord(data: avcC)
     }
 
-    public func videoCodec(_ codec: VideoCodec, didOutput sampleBuffer: CMSampleBuffer) {
+    public func videoCodec(_ codec: VideoCodec, didOutput sampleBuffer: CMSampleBuffer, absoluteTime: Double?) {
         guard let dataBuffer = sampleBuffer.dataBuffer else {
             return
         }

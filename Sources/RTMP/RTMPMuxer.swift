@@ -54,11 +54,16 @@ extension RTMPMuxer: VideoCodecDelegate {
             return
         }
         var buffer = Data([FLVFrameType.key.rawValue << 4 | FLVVideoCodec.avc.rawValue, FLVAVCPacketType.seq.rawValue, 0, 0, 0])
+        
+        // this is encoder pipeline - formatDescription step
+        let absoluteTime = toByteArray(0.0)
+        buffer.append(contentsOf: absoluteTime)
+        
         buffer.append(avcC)
         delegate?.sampleOutput(video: buffer, withTimestamp: 0, muxer: self)
     }
 
-    func videoCodec(_ codec: VideoCodec, didOutput sampleBuffer: CMSampleBuffer) {
+    func videoCodec(_ codec: VideoCodec, didOutput sampleBuffer: CMSampleBuffer, absoluteTime: Double?) {
         let keyframe: Bool = !sampleBuffer.isNotSync
         var compositionTime: Int32 = 0
         let presentationTimeStamp: CMTime = sampleBuffer.presentationTimeStamp
@@ -74,6 +79,25 @@ extension RTMPMuxer: VideoCodecDelegate {
         }
         var buffer = Data([((keyframe ? FLVFrameType.key.rawValue : FLVFrameType.inter.rawValue) << 4) | FLVVideoCodec.avc.rawValue, FLVAVCPacketType.nal.rawValue])
         buffer.append(contentsOf: compositionTime.bigEndian.data[1..<4])
+        
+        // this is encoder pipeline - sampleBuffer step
+//        if let absoluteTime = sampleBuffer.getAttachmentValue(for: "absoluteTime" as NSString) {
+//            let absoluteTimeByteArray = toByteArray((absoluteTime as NSString).doubleValue)
+//            buffer.append(contentsOf: absoluteTimeByteArray)
+//        }
+//        else {
+//            let absoluteTime = toByteArray(0.0)
+//            buffer.append(contentsOf: absoluteTime)
+//        }
+        if let absoluteTime = absoluteTime {
+            let absoluteTimeByteArray = toByteArray(absoluteTime)
+            buffer.append(contentsOf: absoluteTimeByteArray)
+        }
+        else {
+            let absoluteTime = toByteArray(0.0)
+            buffer.append(contentsOf: absoluteTime)
+        }
+        
         buffer.append(data)
         delegate?.sampleOutput(video: buffer, withTimestamp: delta, muxer: self)
         videoTimeStamp = decodeTimeStamp
