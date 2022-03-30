@@ -12,9 +12,23 @@ import UIKit
 
 #if os(macOS)
 import Accelerate
+import CoreFoundation
 #endif
 
 class HighResFrameCapture {
+    
+    // concurrent queue to drive storing multiple HighResFrames in parallel
+    static let writeToStorageConcurrentQueue = DispatchQueue(label: "LiveStageFastStorage_writeToStorageConcurrentQueue", attributes: .concurrent)
+    
+    // one queue for each HighResFrame to sync read-write of that frame
+    let readWriteToStorageSerialQueue: DispatchQueue = {
+        let queue = DispatchQueue(label: "LiveStageFastStorage_readWriteToStorageSerialQueue", target: .global(qos: .userInteractive))
+        return queue
+    }()
+    
+    static let path = FileManager.default.urls(for: .documentDirectory,
+                                               in: .userDomainMask)[0]
+    
     let timestamp: Double
     private var internalData: Data?
     
@@ -26,8 +40,7 @@ class HighResFrameCapture {
     deinit {
         internalData = nil
         
-        let path = FileManager.default.urls(for: .documentDirectory,
-                                            in: .userDomainMask)[0].appendingPathComponent("\(timestamp)")
+        let path = HighResFrameCapture.path.appendingPathComponent("\(timestamp)")
         
         
         do {
@@ -40,36 +53,45 @@ class HighResFrameCapture {
     
     var data: Data? {
         get {
-            if let internalData = internalData {
-                return internalData
-            }
-            else {
-                let path = FileManager.default.urls(for: .documentDirectory,
-                                                    in: .userDomainMask)[0].appendingPathComponent("\(timestamp)")
-                
-                do {
-                    let data = try Data(contentsOf: path)
-                    return data
-                } catch (let error) {
-                    print("error reading frame to disk \(error)")
-                    return nil
+            readWriteToStorageSerialQueue.sync {
+                if let internalData = internalData {
+                    return internalData
+                }
+                else {
+                    let path = HighResFrameCapture.path.appendingPathComponent("\(timestamp)")
+                    
+                    do {
+                        let data = try Data(contentsOf: path)
+                        return data
+                    } catch (let error) {
+                        print("error reading frame to disk \(error)")
+                        return nil
+                    }
                 }
             }
         }
         
         set {
-            internalData = newValue
-            
-            let path = FileManager.default.urls(for: .documentDirectory,
-                                                in: .userDomainMask)[0].appendingPathComponent("\(timestamp)")
-
-            if let internalData = internalData {
-                do {
-                    try internalData.write(to: path)
-                    self.internalData = nil
-                } catch (let error) {
-                    print("error wrting frame to disk \(error)")
+            readWriteToStorageSerialQueue.async {
+                
+                self.internalData = newValue
+                
+                
+                if let internalData = self.internalData {
+                    
+                    // start offloading data to disk
+                    HighResFrameCapture.writeToStorageConcurrentQueue.async {
+                        
+                        let path = HighResFrameCapture.path.appendingPathComponent("\(self.timestamp)")
+                        do {
+                            try internalData.write(to: path)
+                            self.internalData = nil
+                        } catch (let error) {
+                            print("error wrting frame to disk \(error)")
+                        }
+                    }
                 }
+                
             }
         }
     }
@@ -115,6 +137,7 @@ public class LiveStageFastStorage {
     let liveStageHttp = LiveStageHTTP()
     
     let frameProcessingConcurrentQueue = DispatchQueue(label: "LiveStageFastStorage_frameProcessingQueue", attributes: .concurrent)
+    
     let readWrtieSerialQueue = DispatchQueue(label: "LiveStageFastStorage_readWrtieQueue")
     
     func feedIn(buffer: CVPixelBuffer, timestamp: Double) {
@@ -122,45 +145,47 @@ public class LiveStageFastStorage {
             frameProcessingConcurrentQueue.async {
                 let ciImage = CIImage(cvPixelBuffer: buffer)
                 if let cgImage = self.ciContext.createCGImage(ciImage, from: ciImage.extent) {
-                    let data = save_cgimage_to_jpeg(image: cgImage)
-                    
-                    self.readWrtieSerialQueue.async {
-                        if let lastOne = self.highResFrameCaptures.last {
-                            if lastOne.timestamp > timestamp {
-//                                fatalError()
-                                var index = self.highResFrameCaptures.count - 2
-                                
-                                guard index >= 0 else {return}
-                                
-                                while(self.highResFrameCaptures[index].timestamp > timestamp) {
-                                    index -= 1
+                    if let data = save_cgimage_to_jpeg(image: cgImage) {
+                        self.readWrtieSerialQueue.async {
+                            guard (!self.highResFrameCaptures.contains{$0.timestamp == timestamp}) else {return}
+                            
+                            if let lastOne = self.highResFrameCaptures.last {
+                                if lastOne.timestamp > timestamp {
+    //                                fatalError()
+                                    var index = self.highResFrameCaptures.count - 2
+                                    
+                                    guard index >= 0 else {return}
+                                    
+                                    while(self.highResFrameCaptures[index].timestamp > timestamp) {
+                                        index -= 1
+                                    }
+                                    
+                                    self.highResFrameCaptures.insert(HighResFrameCapture(timestamp: timestamp, data: data as Data), at: index)
                                 }
-                                
-                                self.highResFrameCaptures.insert(HighResFrameCapture(timestamp: timestamp, data: data as Data), at: index)
                             }
+                            
+                            self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, data: data as Data))
+                            
+                            if self.highResFrameCaptures.count > 300 {
+                                self.highResFrameCaptures.removeFirst()
+                            }
+                            
+                            //                let imageView = UIImage(data: imageDict[absoluteTime]!)
+                            //                print(imageView)
+    //                                        print("pawan: recording frame \(timestamp) \(self.highResFrameCaptures.last!.data.count/1024)")
+                            
+    //                        DispatchQueue.main.async {
+    //                            let (theCapture, distance) = self.nearestFrame(at: (timestamp - 5))
+    //                            if let data = theCapture?.data {
+    ////                                let imageView = UIImage(data: data)
+    ////                                print("pawan: nearest \(String(describing: theCapture?.timestamp)) distance \(distance)")
+    //                            }
+    //                            else {
+    ////                                print("pawan: did not find \(distance)")
+    //                            }
+    //                        }
+                            
                         }
-                        
-                        self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, data: data as Data))
-                        
-                        if self.highResFrameCaptures.count > 300 {
-                            self.highResFrameCaptures.removeFirst()
-                        }
-                        
-                        //                let imageView = UIImage(data: imageDict[absoluteTime]!)
-                        //                print(imageView)
-//                                        print("pawan: recording frame \(timestamp) \(self.highResFrameCaptures.last!.data.count/1024)")
-                        
-//                        DispatchQueue.main.async {
-//                            let (theCapture, distance) = self.nearestFrame(at: (timestamp - 5))
-//                            if let data = theCapture?.data {
-////                                let imageView = UIImage(data: data)
-////                                print("pawan: nearest \(String(describing: theCapture?.timestamp)) distance \(distance)")
-//                            }
-//                            else {
-////                                print("pawan: did not find \(distance)")
-//                            }
-//                        }
-                        
                     }
                 }
             }
@@ -189,6 +214,21 @@ public class LiveStageFastStorage {
     init() {
         monitorRequestsAndUploadRequestedFrame()
         startSchedulingUploadTasks()
+    }
+    
+    public func emptyStorage() {
+        let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+
+        do {
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: documentsUrl,
+                                                                       includingPropertiesForKeys: nil,
+                                                                       options: .skipsHiddenFiles)
+            for fileURL in fileURLs {
+                try FileManager.default.removeItem(at: fileURL)
+            }
+        } catch  {
+            print("error emptying all frames from disk \(error)")
+        }
     }
     
     func monitorRequestsAndUploadRequestedFrame() {
@@ -439,7 +479,7 @@ class LiveStageHTTP {
                 }
 
                 let responseString = String(data: data, encoding: .utf8)
-                print("responseString = \(responseString)")
+//                print("responseString = \(responseString)")
                 completion(data, nil)
             }
             task.resume()
@@ -485,18 +525,25 @@ extension RandomAccessCollection {
     }
 }
 
-func save_cgimage_to_jpeg (image: CGImage) -> CFData
+func save_cgimage_to_jpeg (image: CGImage) -> CFData?
 {
     let data = CFDataCreateMutable(nil,0);
-    let dest = CGImageDestinationCreateWithData(data!, "public.heic" as CFString, 1, [:] as CFDictionary) //(data, , 1, NULL);
-    CGImageDestinationAddImage (dest!, image, [:] as CFDictionary);
-    if(!CGImageDestinationFinalize(dest!)) {
-//        ; // error
-        print("error")
-    }
+    if let dest = CGImageDestinationCreateWithData(data!, "public.heic" as CFString, 1, [:] as CFDictionary) {
+        CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:1.0] as CFDictionary)
+        
+        CGImageDestinationAddImage (dest, image, [:] as CFDictionary);
+        
+        if(!CGImageDestinationFinalize(dest)) {
+    //        ; // error
+            print("error")
+            return nil
+        }
+        return data
+    } //(data, , 1, NULL);
+    
+    return nil
         
 //    CFRelease(dest);
-    return data!
 }
 
 func toByteArray<T>(_ value: T) -> [UInt8] {
