@@ -14,9 +14,65 @@ import UIKit
 import Accelerate
 #endif
 
-struct HighResFrameCapture {
+class HighResFrameCapture {
     let timestamp: Double
-    let data: Data
+    private var internalData: Data?
+    
+    init(timestamp: Double, data: Data) {
+        self.timestamp = timestamp
+        self.data = data
+    }
+    
+    deinit {
+        internalData = nil
+        
+        let path = FileManager.default.urls(for: .documentDirectory,
+                                            in: .userDomainMask)[0].appendingPathComponent("\(timestamp)")
+        
+        
+        do {
+            try FileManager.default.removeItem(at: path)
+        } catch (let error) {
+            print("error deleting frame to disk \(error)")
+        }
+    }
+    
+    
+    var data: Data? {
+        get {
+            if let internalData = internalData {
+                return internalData
+            }
+            else {
+                let path = FileManager.default.urls(for: .documentDirectory,
+                                                    in: .userDomainMask)[0].appendingPathComponent("\(timestamp)")
+                
+                do {
+                    let data = try Data(contentsOf: path)
+                    return data
+                } catch (let error) {
+                    print("error reading frame to disk \(error)")
+                    return nil
+                }
+            }
+        }
+        
+        set {
+            internalData = newValue
+            
+            let path = FileManager.default.urls(for: .documentDirectory,
+                                                in: .userDomainMask)[0].appendingPathComponent("\(timestamp)")
+
+            if let internalData = internalData {
+                do {
+                    try internalData.write(to: path)
+                    self.internalData = nil
+                } catch (let error) {
+                    print("error wrting frame to disk \(error)")
+                }
+            }
+        }
+    }
 }
 
 enum UploadState {
@@ -73,6 +129,9 @@ public class LiveStageFastStorage {
                             if lastOne.timestamp > timestamp {
 //                                fatalError()
                                 var index = self.highResFrameCaptures.count - 2
+                                
+                                guard index >= 0 else {return}
+                                
                                 while(self.highResFrameCaptures[index].timestamp > timestamp) {
                                     index -= 1
                                 }
