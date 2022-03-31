@@ -133,14 +133,16 @@ extension MediaLink: ChoreographerDelegate {
                 delegate?.mediaLink(self, dequeue: first)
                 frameCount += 1
                 buffer.removeFirst()
+                print("deque: \(frameCount)")
             } else {
                 if 2 < frameCount {
-                    logger.info("droppedFrame: \(frameCount)")
+                    logger.info("deque: droppedFrame: \(frameCount)")
                 }
                 return
             }
         }
         isBuffering = true
+        print("deque: isBuffering")
     }
 }
 

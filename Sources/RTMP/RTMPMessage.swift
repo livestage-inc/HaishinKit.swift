@@ -652,7 +652,7 @@ final class RTMPVideoMessage: RTMPMessage {
         compositionTime /= 256
         
         // this is the network step - read the absolute time in header and attach to sample buffer below
-        let absoluteTime = fromByteArray([UInt8](payload[5..<13]), Double.self)
+        let absoluteTime = fromByteArray([UInt8](payload[5...13]), Double.self)
         print("pawan: \(absoluteTime)")
 
         switch type {
@@ -671,7 +671,7 @@ final class RTMPVideoMessage: RTMPMessage {
         // swiftlint:disable closure_body_length
         payload.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) -> Void in
             var blockBuffer: CMBlockBuffer?
-            let length: Int = payload.count - FLVTagType.video.headerSize
+            let length: Int = payload.count - FLVTagType.video.headerSize - 9
             guard CMBlockBufferCreateWithMemoryBlock(
                 allocator: kCFAllocatorDefault,
                 memoryBlock: nil,
@@ -686,7 +686,7 @@ final class RTMPVideoMessage: RTMPMessage {
                 return
             }
             guard CMBlockBufferReplaceDataBytes(
-                with: buffer.baseAddress!.advanced(by: FLVTagType.video.headerSize),
+                with: buffer.baseAddress!.advanced(by: (FLVTagType.video.headerSize + 9)),
                 blockBuffer: blockBuffer!,
                 offsetIntoDestination: 0,
                 dataLength: length) == noErr else {

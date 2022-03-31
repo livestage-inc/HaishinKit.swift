@@ -55,9 +55,9 @@ extension RTMPMuxer: VideoCodecDelegate {
         }
         var buffer = Data([FLVFrameType.key.rawValue << 4 | FLVVideoCodec.avc.rawValue, FLVAVCPacketType.seq.rawValue, 0, 0, 0])
         
-        // this is encoder pipeline - formatDescription step
-        let absoluteTime = toByteArray(0.0)
-        buffer.append(contentsOf: absoluteTime)
+//        // this is encoder pipeline - formatDescription step
+//        let absoluteTime = toByteArray(0.0)
+//        buffer.append(contentsOf: absoluteTime)
         
         buffer.append(avcC)
         delegate?.sampleOutput(video: buffer, withTimestamp: 0, muxer: self)
@@ -78,27 +78,23 @@ extension RTMPMuxer: VideoCodecDelegate {
             return
         }
         var buffer = Data([((keyframe ? FLVFrameType.key.rawValue : FLVFrameType.inter.rawValue) << 4) | FLVVideoCodec.avc.rawValue, FLVAVCPacketType.nal.rawValue])
+        //"10111"
+        //"100111"
         buffer.append(contentsOf: compositionTime.bigEndian.data[1..<4])
         
-        // this is encoder pipeline - sampleBuffer step
-//        if let absoluteTime = sampleBuffer.getAttachmentValue(for: "absoluteTime" as NSString) {
-//            let absoluteTimeByteArray = toByteArray((absoluteTime as NSString).doubleValue)
+//        // this is encoder pipeline - sampleBuffer step
+//        if let absoluteTime = absoluteTime {
+//            let absoluteTimeByteArray = toByteArray(absoluteTime)
 //            buffer.append(contentsOf: absoluteTimeByteArray)
 //        }
 //        else {
 //            let absoluteTime = toByteArray(0.0)
 //            buffer.append(contentsOf: absoluteTime)
 //        }
-        if let absoluteTime = absoluteTime {
-            let absoluteTimeByteArray = toByteArray(absoluteTime)
-            buffer.append(contentsOf: absoluteTimeByteArray)
-        }
-        else {
-            let absoluteTime = toByteArray(0.0)
-            buffer.append(contentsOf: absoluteTime)
-        }
         
-        buffer.append(data)
+        var mutableData = Data(toByteArray(absoluteTime))
+        mutableData.append(contentsOf: data)
+        buffer.append(mutableData)
         delegate?.sampleOutput(video: buffer, withTimestamp: delta, muxer: self)
         videoTimeStamp = decodeTimeStamp
     }
