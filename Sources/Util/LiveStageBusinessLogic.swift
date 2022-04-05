@@ -202,7 +202,7 @@ public class LiveStageFastStorage {
         
         let distance = highResFrameCaptures[index].timestamp - timestamp
         
-        print("pawan: nearestFrame: timestamp \(timestamp), frametime\(highResFrameCaptures[index].timestamp)")
+//        print("pawan: nearestFrame: timestamp \(timestamp), frametime\(highResFrameCaptures[index].timestamp)")
         
         guard abs(distance) < 1.0 else { return (nil, distance) }
         

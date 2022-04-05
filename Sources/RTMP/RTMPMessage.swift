@@ -653,7 +653,7 @@ final class RTMPVideoMessage: RTMPMessage {
         
         // this is the network step - read the absolute time in header and attach to sample buffer below
         let absoluteTime = fromByteArray([UInt8](payload[5...13]), Double.self)
-        print("pawan: \(absoluteTime)")
+//        print("pawan: \(absoluteTime)")
 
         switch type {
         case .zero:
