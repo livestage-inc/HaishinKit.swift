@@ -50,6 +50,7 @@ final class MediaLink {
     private var scheduledAudioBuffers: Atomic<Int> = .init(0)
     private let lockQueue = DispatchQueue(label: "com.haishinkit.HaishinKit.DisplayLinkedQueue.lock")
 
+    // Debugging
     func enqueueVideo(_ buffer: CMSampleBuffer) {
         guard buffer.presentationTimeStamp != .invalid else {
             return
@@ -68,44 +69,24 @@ final class MediaLink {
         }
     }
 
-    // Fix autio for livestage with syncing via presentationTimeStamp
     func enqueueAudio(_ buffer: AVAudioPCMBuffer, presentationTimeStamp: CMTime) {
-        
         nstry({
             self.scheduledAudioBuffers.mutate { $0 += 1 }
-            
             self.playerNode.scheduleBuffer(buffer, completionHandler: self.didAVAudioNodeCompletion)
-            
-//            if self.scheduledAudioBuffers.value > 10 {
-//                self.playerNode.scheduleBuffer(buffer, at: AVAudioTime(hostTime:mach_absolute_time()), options: .interrupts, completionHandler: {
-//                    self.scheduledAudioBuffers.mutate { $0 = 0 }
-////                    self.lastAudioPresentationTimeStampSeconds = presentationTimeStamp.seconds
-//                })
-//
-//            }
-//            else {
-//                self.playerNode.scheduleBuffer(buffer, completionHandler: self.didAVAudioNodeCompletion)
-//            }
-            
-            //            if !self.hasVideo && !self.playerNode.isPlaying && 10 <= self.scheduledAudioBuffers.value {
-            if !self.playerNode.isPlaying && 10 <= self.scheduledAudioBuffers.value {
-//                self.lastAudioPresentationTimeStampSeconds = presentationTimeStamp.seconds
+            if !self.hasVideo && !self.playerNode.isPlaying && 10 <= self.scheduledAudioBuffers.value {
                 self.playerNode.play()
-                self.lastAudioPresentationTimeStampSeconds = presentationTimeStamp.seconds
             }
         }, { exeption in
             logger.warn(exeption)
         })
     }
-
-    var lastAudioPresentationTimeStampSeconds = 0.0
     
     private func duration(_ duraiton: Double) -> Double {
         if playerNode.isPlaying {
             guard let nodeTime = playerNode.lastRenderTime, let playerTime = playerNode.playerTime(forNodeTime: nodeTime) else {
                 return 0.0
             }
-            return lastAudioPresentationTimeStampSeconds + TimeInterval(playerTime.sampleTime) / playerTime.sampleRate
+            return TimeInterval(playerTime.sampleTime) / playerTime.sampleRate
         }
         return duraiton
     }
@@ -142,7 +123,7 @@ extension MediaLink: ChoreographerDelegate {
             }
         }
         isBuffering = true
-//        print("deque: isBuffering")
+        print("deque: isBuffering")
     }
 }
 

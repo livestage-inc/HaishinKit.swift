@@ -129,6 +129,8 @@ public class LiveStageFastStorage {
     
     public static let shared = LiveStageFastStorage()
     
+    let id = "dixit"
+    
     var highResFrameCaptures = [HighResFrameCapture]()
     let ciContext = CIContext(options: [CIContextOption.highQualityDownsample : true])
     //    let ciContext = CIContext(options: [CIContextOption.useSoftwareRenderer: false])
@@ -136,7 +138,7 @@ public class LiveStageFastStorage {
     let rateLimiter = RateLimiter()
     let liveStageHttp = LiveStageHTTP()
     
-    let frameProcessingConcurrentQueue = DispatchQueue(label: "LiveStageFastStorage_frameProcessingQueue", attributes: .concurrent)
+    let frameProcessingConcurrentQueue = DispatchQueue(label: "LiveStageFastStorage_frameProcessingQueue", qos: .userInteractive, attributes: .concurrent)
     
     let readWrtieSerialQueue = DispatchQueue(label: "LiveStageFastStorage_readWrtieQueue")
     
@@ -257,7 +259,7 @@ public class LiveStageFastStorage {
     
     // get checkIncomingRequests - id returns [timestamp]
     private func checkIncomingRequests() {
-        liveStageHttp.request(method:"GET", endpoint: "checkIncomingRequests", parameters: ["id": "pawan"]) { data, error in
+        liveStageHttp.request(method:"GET", endpoint: "checkIncomingRequests", parameters: ["id": id]) { data, error in
             
             guard let data = data, error == nil else {
                 return
@@ -293,7 +295,7 @@ public class LiveStageFastStorage {
         
         uploadTask.state = .uploading
         
-        liveStageHttp.request(endpoint: "uploadFrame", parameters: ["t": "\(uploadTask.timestamp)", "id" : "pawan"], body: uploadTask.frame, contentHeader: ["Content-Type" : "image/heic"]) { data, error in
+        liveStageHttp.request(endpoint: "uploadFrame", parameters: ["t": "\(uploadTask.timestamp)", "id" : id], body: uploadTask.frame, contentHeader: ["Content-Type" : "image/heic"]) { data, error in
             if error != nil {
                 uploadTask.state = .failed
             }
@@ -306,6 +308,8 @@ public class LiveStageFastStorage {
 
 public class LiveStageViewer {
     public static let shared = LiveStageViewer()
+    
+    let id = "dixit"
     
     var currentDrawnTimestamp: Double = 0.0
     let liveStageHttp = LiveStageHTTP()
@@ -330,14 +334,14 @@ public class LiveStageViewer {
     
     // 1. post requestFrame - t,id
     private func requestFrame(timestamp: Double) {
-        liveStageHttp.request(endpoint: "requestFrame", parameters: ["t": "\(timestamp)", "id": "pawan"], completion: { data, error in
+        liveStageHttp.request(endpoint: "requestFrame", parameters: ["t": "\(timestamp)", "id": id], completion: { data, error in
             print("pawan: capture with \(timestamp) \(error)")
         })
     }
     
     // 2. get checkIncomingFrames - id
     private func checkIncomingFrames() {
-        liveStageHttp.request(method: "GET", endpoint: "checkIncomingFrames", parameters: ["id": "pawan"]) {data, error in
+        liveStageHttp.request(method: "GET", endpoint: "checkIncomingFrames", parameters: ["id": id]) {data, error in
             
             guard let data = data, error == nil else {
                 return
@@ -362,7 +366,7 @@ public class LiveStageViewer {
     
     // get getFrame - t, id
     private func getFrame(timestamp: Double) {
-        liveStageHttp.request(method: "GET", endpoint: "getFrame", parameters: ["t": "\(timestamp)", "id": "pawan"]) { data, error in
+        liveStageHttp.request(method: "GET", endpoint: "getFrame", parameters: ["t": "\(timestamp)", "id": id]) { data, error in
             
             guard let data = data, error == nil else {
                 return
