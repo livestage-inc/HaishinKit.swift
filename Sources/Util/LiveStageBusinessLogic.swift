@@ -15,7 +15,7 @@ import Accelerate
 import CoreFoundation
 #endif
 
-class HighResFrameCapture {
+public class HighResFrameCapture {
     
     // concurrent queue to drive storing multiple HighResFrames in parallel
     static let writeToStorageConcurrentQueue = DispatchQueue(label: "LiveStageFastStorage_writeToStorageConcurrentQueue", attributes: .concurrent)
@@ -29,10 +29,10 @@ class HighResFrameCapture {
     static let path = FileManager.default.urls(for: .documentDirectory,
                                                in: .userDomainMask)[0]
     
-    let timestamp: Double
+    let timestamp: Int
     private var internalData: Data?
     
-    init(timestamp: Double, data: Data) {
+    init(timestamp: Int, data: Data) {
         self.timestamp = timestamp
         self.data = data
     }
@@ -51,7 +51,7 @@ class HighResFrameCapture {
     }
     
     
-    var data: Data? {
+    public var data: Data? {
         get {
             readWriteToStorageSerialQueue.sync {
                 if let internalData = internalData {
@@ -143,6 +143,7 @@ public class LiveStageFastStorage {
     let readWrtieSerialQueue = DispatchQueue(label: "LiveStageFastStorage_readWrtieQueue")
     
     func feedIn(buffer: CVPixelBuffer, timestamp: Double) {
+        var timestamp: Int = Int(timestamp * 1e+5)
         rateLimiter.feed {
             frameProcessingConcurrentQueue.async {
                 let ciImage = CIImage(cvPixelBuffer: buffer)
@@ -194,7 +195,7 @@ public class LiveStageFastStorage {
         }
     }
     
-    func nearestFrame(at timestamp: Double) -> (HighResFrameCapture?, Double) {
+    public func nearestFrame(at timestamp: Int) -> (HighResFrameCapture?, Int) {
         
         let index = highResFrameCaptures.binarySearch {
             $0.timestamp < timestamp
@@ -206,7 +207,7 @@ public class LiveStageFastStorage {
         
 //        print("pawan: nearestFrame: timestamp \(timestamp), frametime\(highResFrameCaptures[index].timestamp)")
         
-        guard abs(distance) < 1.0 else { return (nil, distance) }
+//        guard abs(distance) < 10 else { return (nil, distance) }
         
         return readWrtieSerialQueue.sync {
             (highResFrameCaptures[index], (highResFrameCaptures[index].timestamp - timestamp))
@@ -237,7 +238,7 @@ public class LiveStageFastStorage {
         DispatchQueue.main.async {
             Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
                 self.liveStageHttp.httpQueue.async {
-                    self.checkIncomingRequests()
+//                    self.checkIncomingRequests()
                 }
             }
         }
@@ -258,37 +259,37 @@ public class LiveStageFastStorage {
     private var uploadTasks = [UploadTask]()
     
     // get checkIncomingRequests - id returns [timestamp]
-    private func checkIncomingRequests() {
-        liveStageHttp.request(method:"GET", endpoint: "checkIncomingRequests", parameters: ["id": id]) { data, error in
-            
-            guard let data = data, error == nil else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                let timestampsDict = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String : Any]
-                let timestamps = timestampsDict?["frameIDs"] as? [String]
-//                print("pawan: sender: got icoming request \(timestamps)")
-                
-                timestamps?.compactMap{Double($0)}.forEach { timestamp in
-                    
-                    guard !(self.uploadTasks.contains{ $0.timestamp == timestamp}) else {
-                        
-                        print("Upload task already there")
-                        return
-                    }
-                    
-                    guard let uploadTask = UploadTask(timestamp: timestamp, frame: self.nearestFrame(at: timestamp).0?.data ?? Data()) else {
-                        
-                        print("Upload task nil")
-                        return
-                    }
-                    
-                    self.uploadTasks.append(uploadTask)
-                }
-            }
-        }
-    }
+//    private func checkIncomingRequests() {
+//        liveStageHttp.request(method:"GET", endpoint: "checkIncomingRequests", parameters: ["id": id]) { data, error in
+//
+//            guard let data = data, error == nil else {
+//                return
+//            }
+//
+//            DispatchQueue.main.async {
+//                let timestampsDict = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String : Any]
+//                let timestamps = timestampsDict?["frameIDs"] as? [String]
+////                print("pawan: sender: got icoming request \(timestamps)")
+//
+//                timestamps?.compactMap{Double($0)}.forEach { timestamp in
+//
+//                    guard !(self.uploadTasks.contains{ $0.timestamp == timestamp}) else {
+//
+//                        print("Upload task already there")
+//                        return
+//                    }
+//
+//                    guard let uploadTask = UploadTask(timestamp: timestamp, frame: self.nearestFrame(at: timestamp).0?.data ?? Data()) else {
+//
+//                        print("Upload task nil")
+//                        return
+//                    }
+//
+//                    self.uploadTasks.append(uploadTask)
+//                }
+//            }
+//        }
+//    }
     
     // post uploadFrame - t, id body: heic-image header: X-Content-Type-Options:image/heic
     private func uploadFrame(uploadTask: UploadTask) {
@@ -311,7 +312,7 @@ public class LiveStageViewer {
     
     let id = "dixit"
     
-    var currentDrawnTimestamp: Double = 0.0
+    public var currentDrawnTimestamp: Int = 0
     let liveStageHttp = LiveStageHTTP()
     
     init() {
@@ -328,9 +329,9 @@ public class LiveStageViewer {
         }
     }
     
-    public func capture() {
-        requestFrame(timestamp: currentDrawnTimestamp)
-    }
+//    public func capture() {
+//        requestFrame(timestamp: currentDrawnTimestamp)
+//    }
     
     // 1. post requestFrame - t,id
     private func requestFrame(timestamp: Double) {
@@ -532,7 +533,7 @@ extension RandomAccessCollection {
 func save_cgimage_to_jpeg (image: CGImage) -> CFData?
 {
     let data = CFDataCreateMutable(nil,0);
-    if let dest = CGImageDestinationCreateWithData(data!, "public.heic" as CFString, 1, [:] as CFDictionary) {
+    if let dest = CGImageDestinationCreateWithData(data!, "public.jpeg" as CFString, 1, [:] as CFDictionary) {
         CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:1.0] as CFDictionary)
         
         CGImageDestinationAddImage (dest, image, [:] as CFDictionary);

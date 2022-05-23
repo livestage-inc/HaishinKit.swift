@@ -94,7 +94,7 @@ extension MTHKView: MTKViewDelegate {
         
         if let timestampString = currentSampleBuffer!.getAttachmentValue(for: "absoluteTime" as NSString) {
             let timestamp = (timestampString as NSString).doubleValue
-            LiveStageViewer.shared.currentDrawnTimestamp = timestamp
+            LiveStageViewer.shared.currentDrawnTimestamp = Int(timestamp * 1e+5)
 //            print("pawan: draw: \(timestamp)")
         }
         

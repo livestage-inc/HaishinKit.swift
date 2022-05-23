@@ -219,7 +219,9 @@ extension AVMixer: Running {
         guard isRunning.value else {
             return
         }
-        session.stopRunning()
+        DispatchQueue.global(qos: .userInteractive).async {
+            self.session.stopRunning()
+        }
     }
 }
 #else

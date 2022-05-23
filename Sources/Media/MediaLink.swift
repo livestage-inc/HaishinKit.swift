@@ -50,7 +50,6 @@ final class MediaLink {
     private var scheduledAudioBuffers: Atomic<Int> = .init(0)
     private let lockQueue = DispatchQueue(label: "com.haishinkit.HaishinKit.DisplayLinkedQueue.lock")
 
-    // Debugging
     func enqueueVideo(_ buffer: CMSampleBuffer) {
         guard buffer.presentationTimeStamp != .invalid else {
             return
@@ -123,7 +122,7 @@ extension MediaLink: ChoreographerDelegate {
             }
         }
         isBuffering = true
-        print("deque: isBuffering")
+//        print("deque: isBuffering")
     }
 }
 
