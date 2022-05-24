@@ -129,14 +129,14 @@ public class LiveStageFastStorage {
     
     public static let shared = LiveStageFastStorage()
     
-    let id = "dixit"
+//    let id = "dixit"
     
     var highResFrameCaptures = [HighResFrameCapture]()
     let ciContext = CIContext(options: [CIContextOption.highQualityDownsample : true])
     //    let ciContext = CIContext(options: [CIContextOption.useSoftwareRenderer: false])
     
     let rateLimiter = RateLimiter()
-    let liveStageHttp = LiveStageHTTP()
+//    let liveStageHttp = LiveStageHTTP()
     
     let frameProcessingConcurrentQueue = DispatchQueue(label: "LiveStageFastStorage_frameProcessingQueue", qos: .userInteractive, attributes: .concurrent)
     
@@ -215,8 +215,8 @@ public class LiveStageFastStorage {
     }
     
     init() {
-        monitorRequestsAndUploadRequestedFrame()
-        startSchedulingUploadTasks()
+//        monitorRequestsAndUploadRequestedFrame()
+//        startSchedulingUploadTasks()
     }
     
     public func emptyStorage() {
@@ -234,29 +234,29 @@ public class LiveStageFastStorage {
         }
     }
     
-    func monitorRequestsAndUploadRequestedFrame() {
-        DispatchQueue.main.async {
-            Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-                self.liveStageHttp.httpQueue.async {
-//                    self.checkIncomingRequests()
-                }
-            }
-        }
-    }
+//    func monitorRequestsAndUploadRequestedFrame() {
+//        DispatchQueue.main.async {
+//            Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+//                self.liveStageHttp.httpQueue.async {
+////                    self.checkIncomingRequests()
+//                }
+//            }
+//        }
+//    }
     
-    func startSchedulingUploadTasks() {
-        DispatchQueue.main.async {
-            Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-                self.liveStageHttp.httpQueue.async {
-                    self.uploadTasks.filter{$0.state == .added}.forEach {
-                        self.uploadFrame(uploadTask: $0)
-                    }
-                }
-            }
-        }
-    }
+//    func startSchedulingUploadTasks() {
+//        DispatchQueue.main.async {
+//            Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+//                self.liveStageHttp.httpQueue.async {
+//                    self.uploadTasks.filter{$0.state == .added}.forEach {
+//                        self.uploadFrame(uploadTask: $0)
+//                    }
+//                }
+//            }
+//        }
+//    }
     
-    private var uploadTasks = [UploadTask]()
+//    private var uploadTasks = [UploadTask]()
     
     // get checkIncomingRequests - id returns [timestamp]
 //    private func checkIncomingRequests() {
@@ -291,209 +291,209 @@ public class LiveStageFastStorage {
 //        }
 //    }
     
-    // post uploadFrame - t, id body: heic-image header: X-Content-Type-Options:image/heic
-    private func uploadFrame(uploadTask: UploadTask) {
-        
-        uploadTask.state = .uploading
-        
-        liveStageHttp.request(endpoint: "uploadFrame", parameters: ["t": "\(uploadTask.timestamp)", "id" : id], body: uploadTask.frame, contentHeader: ["Content-Type" : "image/heic"]) { data, error in
-            if error != nil {
-                uploadTask.state = .failed
-            }
-            else {
-                uploadTask.state = .success
-            }
-        }
-    }
+//    // post uploadFrame - t, id body: heic-image header: X-Content-Type-Options:image/heic
+//    private func uploadFrame(uploadTask: UploadTask) {
+//
+//        uploadTask.state = .uploading
+//
+//        liveStageHttp.request(endpoint: "uploadFrame", parameters: ["t": "\(uploadTask.timestamp)", "id" : id], body: uploadTask.frame, contentHeader: ["Content-Type" : "image/heic"]) { data, error in
+//            if error != nil {
+//                uploadTask.state = .failed
+//            }
+//            else {
+//                uploadTask.state = .success
+//            }
+//        }
+//    }
 }
 
 public class LiveStageViewer {
     public static let shared = LiveStageViewer()
     
-    let id = "dixit"
+//    let id = "dixit"
     
     public var currentDrawnTimestamp: Int = 0
-    let liveStageHttp = LiveStageHTTP()
-    
-    init() {
-        checkForIncomingFrameAndDownload()
-    }
-    
-    func checkForIncomingFrameAndDownload() {
-        DispatchQueue.main.async {
-            Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-                self.liveStageHttp.httpQueue.async {
-                    self.checkIncomingFrames()
-                }
-            }
-        }
-    }
+//    let liveStageHttp = LiveStageHTTP()
+//
+//    init() {
+//        checkForIncomingFrameAndDownload()
+//    }
+//
+//    func checkForIncomingFrameAndDownload() {
+//        DispatchQueue.main.async {
+//            Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+//                self.liveStageHttp.httpQueue.async {
+//                    self.checkIncomingFrames()
+//                }
+//            }
+//        }
+//    }
     
 //    public func capture() {
 //        requestFrame(timestamp: currentDrawnTimestamp)
 //    }
     
-    // 1. post requestFrame - t,id
-    private func requestFrame(timestamp: Double) {
-        liveStageHttp.request(endpoint: "requestFrame", parameters: ["t": "\(timestamp)", "id": id], completion: { data, error in
-            print("pawan: capture with \(timestamp) \(error)")
-        })
-    }
+//    // 1. post requestFrame - t,id
+//    private func requestFrame(timestamp: Double) {
+//        liveStageHttp.request(endpoint: "requestFrame", parameters: ["t": "\(timestamp)", "id": id], completion: { data, error in
+//            print("pawan: capture with \(timestamp) \(error)")
+//        })
+//    }
     
-    // 2. get checkIncomingFrames - id
-    private func checkIncomingFrames() {
-        liveStageHttp.request(method: "GET", endpoint: "checkIncomingFrames", parameters: ["id": id]) {data, error in
-            
-            guard let data = data, error == nil else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                print("pawan: viewer: Got incoming frame")
-                
-                let timestampsDict = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String : Any]
-                let timestamps = timestampsDict?["frameIDs"] as? [String]
-                print("pawan: sender: got icoming request \(timestamps)")
-                
-                timestamps?.compactMap{Double($0)}.forEach { timestamp in
-                    self.liveStageHttp.httpQueue.async {
-                        self.getFrame(timestamp: timestamp)
-                    }
-                }
-            }
-        }
-    }
-    
-    
-    // get getFrame - t, id
-    private func getFrame(timestamp: Double) {
-        liveStageHttp.request(method: "GET", endpoint: "getFrame", parameters: ["t": "\(timestamp)", "id": id]) { data, error in
-            
-            guard let data = data, error == nil else {
-                return
-            }
-            
-            DispatchQueue.main.async {
-                print("pawan: viewer: Got frame")
-                
-                if let inputImage = UIImage(data: data) {
-                    print("pawan: viewer: saved frame")
-                    UIImageWriteToSavedPhotosAlbum(inputImage, nil, nil, nil)
-                }
-            }
-        }
-    }
-    
-}
-
-class LiveStageHTTP {
-    
-    let httpQueue = DispatchQueue(label: "LiveStageFastStorage_HttpQueue")
-    
-    enum LiveStageHTTPError: Error {
-        case malformedUrl
-        case badResponse(String)
-    }
-    
-//    func getRequest(endpoint: String, parameters: [String: String], completion: @escaping (Data?, Error?)->Void) {
+//    // 2. get checkIncomingFrames - id
+//    private func checkIncomingFrames() {
+//        liveStageHttp.request(method: "GET", endpoint: "checkIncomingFrames", parameters: ["id": id]) {data, error in
 //
-//        guard let url = URL(string: "https://livestagepocserver.herokuapp.com/api/\(endpoint)") else {
-//            completion(nil, LiveStageHTTPError.malformedUrl)
-//            return
-//        }
-//
-//        var urlComponents = URLComponents(string: url.absoluteString)
-//
-//        let queryItems = parameters.map  { URLQueryItem(name: $0.key, value: $0.value) }
-//        urlComponents?.queryItems = queryItems
-//
-//        if let url = urlComponents?.url?.absoluteURL {
-//            let task = URLSession.shared.dataTask(with: url) { data, response, error in
-//                guard let data = data,
-//                    let response = response as? HTTPURLResponse,
-//                    error == nil else {                                              // check for fundamental networking error
-//                    print("error", error ?? "Unknown error")
-//                    return
-//                }
-//
-//                guard (200 ... 299) ~= response.statusCode else {                    // check for http errors
-//                    print("statusCode should be 2xx, but is \(response.statusCode)")
-//                    print("response = \(response)")
-//                    return
-//                }
-//
-//                let responseString = String(data: data, encoding: .utf8)
-//                let image = UIImage(data: data)
-//                print("responseString = \(responseString)")
-//                success(data)
+//            guard let data = data, error == nil else {
+//                return
 //            }
 //
-//            task.resume()
-//        }
-//        else {
-//            completion(nil, LiveStageHTTPError.malformedUrl)
+//            DispatchQueue.main.async {
+//                print("pawan: viewer: Got incoming frame")
+//
+//                let timestampsDict = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String : Any]
+//                let timestamps = timestampsDict?["frameIDs"] as? [String]
+//                print("pawan: sender: got icoming request \(timestamps)")
+//
+//                timestamps?.compactMap{Double($0)}.forEach { timestamp in
+//                    self.liveStageHttp.httpQueue.async {
+//                        self.getFrame(timestamp: timestamp)
+//                    }
+//                }
+//            }
 //        }
 //    }
     
-    func request(method: String? = "POST", endpoint: String, parameters: [String: String], body: Data? = nil, contentHeader: [String: String]? = nil, completion: @escaping (Data?, Error?)->Void) {
-        
-        guard let url = URL(string: "https://livestagepocserver.herokuapp.com/api/\(endpoint)") else {
-            completion(nil, LiveStageHTTPError.malformedUrl)
-            return
-        }
-        
-        var urlComponents = URLComponents(string: url.absoluteString)
-
-        let queryItems = parameters.map  { URLQueryItem(name: $0.key, value: $0.value) }
-        urlComponents?.queryItems = queryItems
-
-        if let url = urlComponents?.url?.absoluteURL {
-            
-            var request = URLRequest(url: url)
-            
-            if method == "POST" {
-                
-                if let contentHeader = contentHeader?.first {
-                    request.setValue(contentHeader.value, forHTTPHeaderField: contentHeader.key)
-                }
-                
-                request.httpMethod = "POST"
-                
-                if let body = body {
-                    request.httpBody = body
-                }
-            }
-            
-//            else {
-//                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+    
+//    // get getFrame - t, id
+//    private func getFrame(timestamp: Double) {
+//        liveStageHttp.request(method: "GET", endpoint: "getFrame", parameters: ["t": "\(timestamp)", "id": id]) { data, error in
+//
+//            guard let data = data, error == nil else {
+//                return
 //            }
-            let task = URLSession.shared.dataTask(with: request) { data, response, error in
-                guard let data = data,
-                    let response = response as? HTTPURLResponse,
-                    error == nil else {                                              // check for fundamental networking error
-                    print("error", error ?? "Unknown error")
-                    completion(nil, error)
-                    return
-                }
-
-                guard (200 ... 299) ~= response.statusCode else {                    // check for http errors
-                    print("statusCode should be 2xx, but is \(response.statusCode)")
-                    print("response = \(response)")
-                    completion(nil, LiveStageHTTPError.badResponse("statusCode should be 2xx, but is \(response.statusCode)"))
-                    return
-                }
-
-                let responseString = String(data: data, encoding: .utf8)
-//                print("responseString = \(responseString)")
-                completion(data, nil)
-            }
-            task.resume()
-        }
-        else {
-            completion(nil, LiveStageHTTPError.malformedUrl)
-        }
-    }
+//
+//            DispatchQueue.main.async {
+//                print("pawan: viewer: Got frame")
+//
+//                if let inputImage = UIImage(data: data) {
+//                    print("pawan: viewer: saved frame")
+//                    UIImageWriteToSavedPhotosAlbum(inputImage, nil, nil, nil)
+//                }
+//            }
+//        }
+//    }
+    
 }
+
+//class LiveStageHTTP {
+//    
+//    let httpQueue = DispatchQueue(label: "LiveStageFastStorage_HttpQueue")
+//    
+//    enum LiveStageHTTPError: Error {
+//        case malformedUrl
+//        case badResponse(String)
+//    }
+//    
+////    func getRequest(endpoint: String, parameters: [String: String], completion: @escaping (Data?, Error?)->Void) {
+////
+////        guard let url = URL(string: "https://livestagepocserver.herokuapp.com/api/\(endpoint)") else {
+////            completion(nil, LiveStageHTTPError.malformedUrl)
+////            return
+////        }
+////
+////        var urlComponents = URLComponents(string: url.absoluteString)
+////
+////        let queryItems = parameters.map  { URLQueryItem(name: $0.key, value: $0.value) }
+////        urlComponents?.queryItems = queryItems
+////
+////        if let url = urlComponents?.url?.absoluteURL {
+////            let task = URLSession.shared.dataTask(with: url) { data, response, error in
+////                guard let data = data,
+////                    let response = response as? HTTPURLResponse,
+////                    error == nil else {                                              // check for fundamental networking error
+////                    print("error", error ?? "Unknown error")
+////                    return
+////                }
+////
+////                guard (200 ... 299) ~= response.statusCode else {                    // check for http errors
+////                    print("statusCode should be 2xx, but is \(response.statusCode)")
+////                    print("response = \(response)")
+////                    return
+////                }
+////
+////                let responseString = String(data: data, encoding: .utf8)
+////                let image = UIImage(data: data)
+////                print("responseString = \(responseString)")
+////                success(data)
+////            }
+////
+////            task.resume()
+////        }
+////        else {
+////            completion(nil, LiveStageHTTPError.malformedUrl)
+////        }
+////    }
+//    
+////    func request(method: String? = "POST", endpoint: String, parameters: [String: String], body: Data? = nil, contentHeader: [String: String]? = nil, completion: @escaping (Data?, Error?)->Void) {
+////
+////        guard let url = URL(string: "https://livestagepocserver.herokuapp.com/api/\(endpoint)") else {
+////            completion(nil, LiveStageHTTPError.malformedUrl)
+////            return
+////        }
+////
+////        var urlComponents = URLComponents(string: url.absoluteString)
+////
+////        let queryItems = parameters.map  { URLQueryItem(name: $0.key, value: $0.value) }
+////        urlComponents?.queryItems = queryItems
+////
+////        if let url = urlComponents?.url?.absoluteURL {
+////
+////            var request = URLRequest(url: url)
+////
+////            if method == "POST" {
+////
+////                if let contentHeader = contentHeader?.first {
+////                    request.setValue(contentHeader.value, forHTTPHeaderField: contentHeader.key)
+////                }
+////
+////                request.httpMethod = "POST"
+////
+////                if let body = body {
+////                    request.httpBody = body
+////                }
+////            }
+////
+//////            else {
+//////                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+//////            }
+////            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+////                guard let data = data,
+////                    let response = response as? HTTPURLResponse,
+////                    error == nil else {                                              // check for fundamental networking error
+////                    print("error", error ?? "Unknown error")
+////                    completion(nil, error)
+////                    return
+////                }
+////
+////                guard (200 ... 299) ~= response.statusCode else {                    // check for http errors
+////                    print("statusCode should be 2xx, but is \(response.statusCode)")
+////                    print("response = \(response)")
+////                    completion(nil, LiveStageHTTPError.badResponse("statusCode should be 2xx, but is \(response.statusCode)"))
+////                    return
+////                }
+////
+////                let responseString = String(data: data, encoding: .utf8)
+//////                print("responseString = \(responseString)")
+////                completion(data, nil)
+////            }
+////            task.resume()
+////        }
+////        else {
+////            completion(nil, LiveStageHTTPError.malformedUrl)
+////        }
+////    }
+//}
 
 class RateLimiter {
     
@@ -533,7 +533,7 @@ extension RandomAccessCollection {
 func save_cgimage_to_jpeg (image: CGImage) -> CFData?
 {
     let data = CFDataCreateMutable(nil,0);
-    if let dest = CGImageDestinationCreateWithData(data!, "public.jpeg" as CFString, 1, [:] as CFDictionary) {
+    if let dest = CGImageDestinationCreateWithData(data!, "public.heic" as CFString, 1, [:] as CFDictionary) {
         CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:1.0] as CFDictionary)
         
         CGImageDestinationAddImage (dest, image, [:] as CFDictionary);
