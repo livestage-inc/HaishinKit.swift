@@ -159,7 +159,7 @@ public class LiveStageFastStorage {
                                     
                                     guard index >= 0 else {return}
                                     
-                                    while(self.highResFrameCaptures[index].timestamp > timestamp) {
+                                    while(index > 0 && self.highResFrameCaptures[index].timestamp > timestamp) {
                                         index -= 1
                                     }
                                     
@@ -313,6 +313,7 @@ public class LiveStageViewer {
 //    let id = "dixit"
     
     public var currentDrawnTimestamp: Int = 0
+    public var currentDrawnImage: CIImage?
 //    let liveStageHttp = LiveStageHTTP()
 //
 //    init() {
