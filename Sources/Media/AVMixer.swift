@@ -17,6 +17,7 @@ protocol AVMixerDelegate: AnyObject {
 
 /// An object that mixies audio and video for streaming.
 public class AVMixer {
+    let serialQueue = DispatchQueue(label: "serialQueue")
     public static let defaultFPS: Float64 = 30
     public static let defaultVideoSettings: [NSString: AnyObject] = [
         kCVPixelBufferPixelFormatTypeKey: NSNumber(value: kCVPixelFormatType_32BGRA)
@@ -210,7 +211,7 @@ extension AVMixer: Running {
         guard !isRunning.value else {
             return
         }
-        DispatchQueue.global(qos: .userInteractive).async {
+        self.serialQueue.async {
             self.session.startRunning()
         }
     }
@@ -219,7 +220,7 @@ extension AVMixer: Running {
         guard isRunning.value else {
             return
         }
-        DispatchQueue.global(qos: .userInteractive).async {
+        self.serialQueue.async {
             self.session.stopRunning()
         }
     }
