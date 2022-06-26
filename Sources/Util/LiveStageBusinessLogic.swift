@@ -72,15 +72,14 @@ public class HighResFrameCapture {
         }
         
         set {
-            readWriteToStorageSerialQueue.async {
+            readWriteToStorageSerialQueue.sync {
                 
                 self.internalData = newValue
-                
-                
-                if let internalData = self.internalData {
+  
+                // start offloading data to disk
+                HighResFrameCapture.writeToStorageConcurrentQueue.async {
                     
-                    // start offloading data to disk
-                    HighResFrameCapture.writeToStorageConcurrentQueue.async {
+                    if let internalData = self.internalData {
                         
                         let path = HighResFrameCapture.path.appendingPathComponent("\(self.timestamp)")
                         do {
@@ -143,8 +142,9 @@ public class LiveStageFastStorage {
     let readWrtieSerialQueue = DispatchQueue(label: "LiveStageFastStorage_readWrtieQueue")
     
     func feedIn(buffer: CVPixelBuffer, timestamp: Double) {
-        var timestamp: Int = Int(timestamp * 1e+5)
+        
         rateLimiter.feed {
+            let timestamp: Int = Int(timestamp * 1e+5)
             frameProcessingConcurrentQueue.async {
                 let ciImage = CIImage(cvPixelBuffer: buffer)
                 if let cgImage = self.ciContext.createCGImage(ciImage, from: ciImage.extent) {
@@ -195,13 +195,13 @@ public class LiveStageFastStorage {
         }
     }
     
-    public func nearestFrame(at timestamp: Int) -> (HighResFrameCapture?, Int) {
+    public func nearestFrame(at timestamp: Int) -> (HighResFrameCapture?, Int?, Int?, Int?) {
         
         let index = highResFrameCaptures.binarySearch {
             $0.timestamp < timestamp
         }
         
-        guard index >= 0 && index < highResFrameCaptures.count else { return (nil, 1000) }
+        guard index >= 0 && index < highResFrameCaptures.count else { return (nil, nil, highResFrameCaptures.first?.timestamp, highResFrameCaptures.last?.timestamp) }
         
         let distance = highResFrameCaptures[index].timestamp - timestamp
         
@@ -210,7 +210,7 @@ public class LiveStageFastStorage {
 //        guard abs(distance) < 10 else { return (nil, distance) }
         
         return readWrtieSerialQueue.sync {
-            (highResFrameCaptures[index], (highResFrameCaptures[index].timestamp - timestamp))
+            (highResFrameCaptures[index], (highResFrameCaptures[index].timestamp - timestamp), highResFrameCaptures.first?.timestamp, highResFrameCaptures.last?.timestamp)
         }
     }
     
