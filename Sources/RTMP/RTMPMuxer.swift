@@ -93,8 +93,8 @@ extension RTMPMuxer: VideoCodecDelegate {
 //        }
         
         var mutableData = Data(toByteArray(absoluteTime))
-        mutableData.append(contentsOf: data)
-        buffer.append(mutableData)
+//        mutableData.append(contentsOf: data)
+        buffer.append(data)
         delegate?.sampleOutput(video: buffer, withTimestamp: delta, muxer: self)
         videoTimeStamp = decodeTimeStamp
     }

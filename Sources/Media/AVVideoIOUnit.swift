@@ -3,6 +3,51 @@ import CoreImage
 import UIKit
 
 final class AVVideoIOUnit: NSObject, AVIOUnit {
+    
+//    var blackCIImageDict: [String: CIImage] = {
+//
+//        var _blackCIImageDict = [String: CIImage]()
+//
+//        for index in 0..<32 {
+//            let image = UIImage(named: "black\(index + 1).PNG")!
+//
+////            let size = CGSizeApplyAffineTransform(image.size, CGAffineTransformMakeScale(1, 1))
+////            let hasAlpha = true
+////            let scale: CGFloat = 0.0 // Automatically use scale factor of main screen
+////
+////            UIGraphicsBeginImageContextWithOptions(size, !hasAlpha, scale)
+////            image.draw(in: CGRect(origin: CGPointZero, size: size))
+////
+////            let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
+////            UIGraphicsEndImageContext()
+//
+//            var ciImage = CIImage(cgImage: image.cgImage!)
+//
+//            _blackCIImageDict["black\(index + 1).PNG"] = ciImage
+//        }
+//
+//        return _blackCIImageDict
+//    }()
+    
+//    var whiteCIImage: CIImage = {
+//        let image = UIImage(named: "white.PNG")!
+//
+////        let size = CGSizeApplyAffineTransform(image.size, CGAffineTransformMakeScale(1, 1))
+////        let hasAlpha = true
+////        let scale: CGFloat = 0.0 // Automatically use scale factor of main screen
+////
+////        UIGraphicsBeginImageContextWithOptions(size, !hasAlpha, scale)
+////        image.draw(in: CGRect(origin: CGPointZero, size: size))
+////
+////        let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
+////        UIGraphicsEndImageContext()
+//
+//        var ciImage = CIImage(cgImage: image.cgImage!)
+//        return ciImage
+//    }()
+    
+    var frameNumber: Int = 0
+    
     static let defaultAttributes: [NSString: NSObject] = [
         kCVPixelBufferPixelFormatTypeKey: NSNumber(value: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange),
         kCVPixelBufferMetalCompatibilityKey: kCFBooleanTrue
@@ -386,51 +431,132 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
 }
 
 extension AVVideoIOUnit {
+    func pad(string : String, toSize: Int) -> String {
+      var padded = string
+      for _ in 0..<(toSize - string.count) {
+        padded = "0" + padded
+      }
+        return padded
+    }
+    
     func encodeSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
         guard let buffer: CVImageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
             return
         }
 
-        var imageBuffer: CVImageBuffer?
+//        var imageBuffer: CVImageBuffer?
 
         CVPixelBufferLockBaseAddress(buffer, [])
         defer {
             CVPixelBufferUnlockBaseAddress(buffer, [])
-            if let imageBuffer = imageBuffer {
-                CVPixelBufferUnlockBaseAddress(imageBuffer, [])
-            }
+//            if let imageBuffer = imageBuffer {
+//                CVPixelBufferUnlockBaseAddress(imageBuffer, [])
+//            }
         }
         
+//        let ioSurface = CVPixelBufferGetIOSurface(buffer)
+        
         // This came from the capture output step so lets record the timestamp and feed the frame for livestage storage
-        let absoluteTime = Date.timeIntervalSinceReferenceDate
-        LiveStageFastStorage.shared.feedIn(buffer: buffer, timestamp: absoluteTime)
+        let absoluteTime = frameNumber//Date.timeIntervalSinceReferenceDate
+//        let timestamp: Int = Int(absoluteTime * 1e+5)
+        
+        
+        var image = CIImage(cvPixelBuffer: buffer)
+        LiveStageFastStorage.shared.feedIn(ciImage: image, timestamp: absoluteTime)
+        
+        let num = absoluteTime
+        let str = String(num, radix: 2)
+        let binaryString = pad(string: str, toSize: 20)
+//        print(binaryString)
+        
+        frameNumber += 1
 
         if renderer != nil || !effects.isEmpty {
-            let image: CIImage = effect(buffer, info: sampleBuffer)
-            extent = image.extent
-            if !effects.isEmpty {
-                #if os(macOS)
-                CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &imageBuffer)
-                #else
-                if buffer.width != Int(extent.width) || buffer.height != Int(extent.height) {
-                    CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &imageBuffer)
+
+            
+//            var uiImage = UIImage(ciImage: image, scale: 0.25, orientation: .up)
+//            image = CIImage(cgImage: uiImage.cgImage!)
+
+            
+//            let scaleFilter = CIFilter(name:"CILanczosScaleTransform")!
+//            scaleFilter.setValue(image, forKey: kCIInputImageKey)
+//            scaleFilter.setValue(0.25, forKey: kCIInputScaleKey)
+//            scaleFilter.setValue(1, forKey: kCIInputAspectRatioKey)
+//            image = scaleFilter.outputImage!
+
+//            if let whiteOverlay = UIImage(named: "white.PNG") {
+
+//                var whiteOverlayImage = whiteCIImage
+            
+            
+            
+            if #available(iOS 13.0, *) {
+                let destination = CIRenderDestination(pixelBuffer: buffer)
+                
+                let totalWidth = destination.width
+                let blockWidth = totalWidth / 20
+                
+                try! context?.startTask(toRender: CIImage.white, from: CGRect(x: 0, y: 0, width: totalWidth, height: 100), to: destination, at: CGPoint(x: 0, y: 0))
+            
+
+                for (index, char) in binaryString.enumerated() {
+                    if char == "1" {
+//                        if let overlayImage = blackCIImageDict["black\(index + 1).PNG"] {
+//                            whiteOverlayImage = overlayImage.composited(over: whiteOverlayImage)
+//                        }
+                        if #available(iOS 13.0, *) {
+                            try! context?.startTask(toRender: CIImage.black, from: CGRect(x: 0, y: 0, width: blockWidth, height: 100), to: destination, at: CGPoint(x: index * blockWidth, y: 0))
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                    }
                 }
-                #endif
-                if let imageBuffer = imageBuffer {
-                    CVPixelBufferLockBaseAddress(imageBuffer, [])
-                }
-                context?.render(image, to: imageBuffer ?? buffer)
+                
+            } else {
+                // Fallback on earlier versions
             }
+            
+            
+
+//                image = whiteOverlayImage.composited(over: image)
+//            }
+            
+//            scaleFilter.setValue(image, forKey: kCIInputImageKey)
+//            scaleFilter.setValue(4, forKey: kCIInputScaleKey)
+//            scaleFilter.setValue(1, forKey: kCIInputAspectRatioKey)
+//            image = scaleFilter.outputImage!
+            
+//            uiImage = UIImage(ciImage: image, scale: 4, orientation: .up)
+//            image = CIImage(cgImage: uiImage.cgImage!)
+            
+            extent = image.extent
+
+//            let image: CIImage = effect(buffer, info: sampleBuffer)
+
+            
+//            if !effects.isEmpty {
+//                #if os(macOS)
+//                CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &imageBuffer)
+//                #else
+//                if buffer.width != Int(extent.width) || buffer.height != Int(extent.height) {
+//                    CVPixelBufferPoolCreatePixelBuffer(nil, pixelBufferPool, &imageBuffer)
+//                }
+//                #endif
+//                if let imageBuffer = imageBuffer {
+//                    CVPixelBufferLockBaseAddress(imageBuffer, [])
+//                }
+                context?.render(image, to: buffer)
+//            }
             renderer?.enqueue(sampleBuffer)
         }
 
         encoder.encodeImageBuffer(
-            imageBuffer ?? buffer,
+            buffer,
             presentationTimeStamp: sampleBuffer.presentationTimeStamp,
-            duration: sampleBuffer.duration, absoluteTimestamp: absoluteTime
+            duration: sampleBuffer.duration, absoluteTimestamp: Double(absoluteTime)
         )
 
-        mixer?.recorder.appendPixelBuffer(imageBuffer ?? buffer, withPresentationTime: sampleBuffer.presentationTimeStamp)
+//        mixer?.recorder.appendPixelBuffer(buffer, withPresentationTime: sampleBuffer.presentationTimeStamp)
     }
 }
 

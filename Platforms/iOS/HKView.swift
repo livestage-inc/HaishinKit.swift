@@ -73,8 +73,8 @@ open class HKView: UIView {
         layer.backgroundColor = HKView.defaultBackgroundColor.cgColor
     }
 
-    open func attachStream(_ stream: NetStream?) {
-        guard let stream: NetStream = stream else {
+    open func attachStream(_ theStream: NetStream?) {
+        guard let stream: NetStream = theStream else {
             layer.session?.stopRunning()
             layer.session = nil
             currentStream = nil

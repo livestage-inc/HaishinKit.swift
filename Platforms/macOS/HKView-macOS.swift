@@ -48,16 +48,16 @@ open class HKView: NSView {
         layer?.setValue(videoGravity, forKey: "videoGravity")
     }
 
-    open func attachStream(_ stream: NetStream?) {
-        currentStream = stream
-        guard let stream: NetStream = stream else {
+    open func attachStream(_ theStream: NetStream?) {
+        currentStream = theStream
+        guard let stream: NetStream = theStream else {
             layer?.setValue(nil, forKey: "session")
             return
         }
-        stream.lockQueue.async {
-            self.layer?.setValue(stream.mixer.session, forKey: "session")
-            stream.mixer.videoIO.renderer = self
-            stream.mixer.startRunning()
+        theStream.lockQueue.async {
+            self.layer?.setValue(theStream.mixer.session, forKey: "session")
+            theStream.mixer.videoIO.renderer = self
+            theStream.mixer.startRunning()
         }
     }
 }

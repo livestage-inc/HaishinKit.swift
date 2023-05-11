@@ -131,7 +131,7 @@ public class LiveStageFastStorage {
 //    let id = "dixit"
     
     var highResFrameCaptures = [HighResFrameCapture]()
-    let ciContext = CIContext(options: [CIContextOption.highQualityDownsample : true])
+    let ciContext = CIContext(options: [CIContextOption.highQualityDownsample : false])
     //    let ciContext = CIContext(options: [CIContextOption.useSoftwareRenderer: false])
     
     let rateLimiter = RateLimiter()
@@ -141,12 +141,12 @@ public class LiveStageFastStorage {
     
     let readWrtieSerialQueue = DispatchQueue(label: "LiveStageFastStorage_readWrtieQueue")
     
-    func feedIn(buffer: CVPixelBuffer, timestamp: Double) {
+    func feedIn(ciImage: CIImage, timestamp: Int) {
         
         rateLimiter.feed {
-            let timestamp: Int = Int(timestamp * 1e+5)
+//            let timestamp: Int = Int(timestamp * 1e+5)
             frameProcessingConcurrentQueue.async {
-                let ciImage = CIImage(cvPixelBuffer: buffer)
+//                let ciImage = CIImage(cvPixelBuffer: buffer)
                 if let cgImage = self.ciContext.createCGImage(ciImage, from: ciImage.extent) {
                     if let data = save_cgimage_to_jpeg(image: cgImage) {
                         self.readWrtieSerialQueue.async {
@@ -169,7 +169,7 @@ public class LiveStageFastStorage {
                             
                             self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, data: data as Data))
                             
-                            if self.highResFrameCaptures.count > 300 {
+                            if self.highResFrameCaptures.count > 600 {
                                 self.highResFrameCaptures.removeFirst()
                             }
                             
@@ -535,7 +535,7 @@ func save_cgimage_to_jpeg (image: CGImage) -> CFData?
 {
     let data = CFDataCreateMutable(nil,0);
     if let dest = CGImageDestinationCreateWithData(data!, "public.heic" as CFString, 1, [:] as CFDictionary) {
-        CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:1.0] as CFDictionary)
+        CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:0.9] as CFDictionary)
         
         CGImageDestinationAddImage (dest, image, [:] as CFDictionary);
         
