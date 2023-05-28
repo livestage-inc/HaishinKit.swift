@@ -145,7 +145,7 @@ public class AudioCodec {
     }
 
     private var _converter: AudioConverterRef?
-    private var converter: AudioConverterRef {
+    private var converter: AudioConverterRef? {
         var status: OSStatus = noErr
         if _converter == nil {
             var inClassDescriptions = destination.inClassDescriptions
@@ -161,7 +161,7 @@ public class AudioCodec {
         if status != noErr {
             logger.warn("\(status)")
         }
-        return _converter!
+        return _converter
     }
 
     public func encodeBytes(_ bytes: UnsafeMutableRawPointer?, count: Int, presentationTimeStamp: CMTime) {
@@ -212,6 +212,20 @@ public class AudioCodec {
                 outOutputData[i].mNumberChannels = inDestinationFormat.mChannelsPerFrame
                 outOutputData[i].mDataByteSize = UInt32(dataBytesSize)
                 outOutputData[i].mData = UnsafeMutableRawPointer.allocate(byteCount: dataBytesSize, alignment: 0)
+            }
+            
+            guard let converter = converter else {
+                finished = true;
+                
+                for i in 0..<outOutputData.count {
+                    if let mData = outOutputData[i].mData {
+                        free(mData)
+                    }
+                }
+
+                free(outOutputData.unsafeMutablePointer)
+                
+                break
             }
 
             let status = AudioConverterFillComplexBuffer(
