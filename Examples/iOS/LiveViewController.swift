@@ -72,14 +72,13 @@ final class LiveViewController: UIViewController {
         rtmpStream.attachAudio(AVCaptureDevice.default(for: .audio)) { error in
             logger.warn(error)
         }
-        let back = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: currentPosition)
-        rtmpStream.attachCamera(back) { error in
-            logger.warn(error)
-        }
-        if #available(iOS 13.0, *) {
-            let front = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
-            rtmpStream.videoCapture(for: 1)?.isVideoMirrored = true
-            rtmpStream.attachMultiCamera(front)
+        if #available(iOS 17.0, *) {
+            let back = AVCaptureDevice.DiscoverySession(deviceTypes: [.external], mediaType: .video, position: .unspecified).devices.first
+            rtmpStream.attachCamera(back) { error in
+                logger.warn(error)
+            }
+        } else {
+            // Fallback on earlier versions
         }
         rtmpStream.addObserver(self, forKeyPath: "currentFPS", options: .new, context: nil)
         lfView?.attachStream(rtmpStream)
