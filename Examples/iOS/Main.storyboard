@@ -3,7 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21679"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -113,6 +113,19 @@
                                     <action selector="onPublish:" destination="9pv-A4-QxB" eventType="touchDown" id="c2R-AY-2Rc"/>
                                 </connections>
                             </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hgh-oK-MWl">
+                                <rect key="frame" x="326" y="699" width="72" height="30"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="30" id="pNd-HV-wn7"/>
+                                </constraints>
+                                <color key="tintColor" systemColor="systemRedColor"/>
+                                <state key="normal" title="Stream off"/>
+                                <state key="selected" title="Stream on"/>
+                                <connections>
+                                    <action selector="onScreen:" destination="9pv-A4-QxB" eventType="touchDown" id="s3F-oP-HAr"/>
+                                </connections>
+                            </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ioi-3B-kK8">
                                 <rect key="frame" x="368" y="767" width="30" height="30"/>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="1" alpha="1" colorSpace="calibratedRGB"/>
@@ -133,6 +146,7 @@
                         <viewLayoutGuide key="safeArea" id="xxe-Wi-b9E"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
+                            <constraint firstItem="xxe-Wi-b9E" firstAttribute="trailing" secondItem="hgh-oK-MWl" secondAttribute="trailing" constant="16" id="0fO-OG-Vu4"/>
                             <constraint firstItem="YMl-Xb-JZb" firstAttribute="leading" secondItem="xxe-Wi-b9E" secondAttribute="leading" constant="8" id="0wk-JQ-9EF"/>
                             <constraint firstItem="oVn-9L-n2U" firstAttribute="top" secondItem="xxe-Wi-b9E" secondAttribute="top" id="1zP-ro-N7o"/>
                             <constraint firstItem="4s5-OW-qAO" firstAttribute="top" secondItem="Qnn-SP-eWm" secondAttribute="bottom" constant="8" id="3iz-95-ma6"/>
@@ -146,6 +160,7 @@
                             <constraint firstItem="oVn-9L-n2U" firstAttribute="leading" secondItem="LTk-1V-jZa" secondAttribute="trailing" constant="16" id="TIx-vj-Qkh"/>
                             <constraint firstItem="xxe-Wi-b9E" firstAttribute="trailing" secondItem="ioi-3B-kK8" secondAttribute="trailing" constant="16" id="Tw6-jv-tFG"/>
                             <constraint firstItem="xxe-Wi-b9E" firstAttribute="bottom" secondItem="aKS-oc-LrT" secondAttribute="bottom" constant="8" id="VXV-L1-EAE"/>
+                            <constraint firstItem="kaV-Nf-KmS" firstAttribute="top" secondItem="hgh-oK-MWl" secondAttribute="bottom" id="W6E-cr-Sd3"/>
                             <constraint firstItem="xxe-Wi-b9E" firstAttribute="trailing" secondItem="Gme-VA-sgd" secondAttribute="trailing" id="WGA-8W-z7H"/>
                             <constraint firstItem="kaV-Nf-KmS" firstAttribute="leading" secondItem="dLf-ee-K3I" secondAttribute="trailing" constant="16" id="XZC-rZ-A2O"/>
                             <constraint firstItem="4s5-OW-qAO" firstAttribute="leading" secondItem="xxe-Wi-b9E" secondAttribute="leading" constant="16" id="bBy-aT-OSg"/>
@@ -177,6 +192,7 @@
                         <outlet property="lfView" destination="Gme-VA-sgd" id="lgg-bN-G69"/>
                         <outlet property="pauseButton" destination="ioi-3B-kK8" id="Afy-2V-jam"/>
                         <outlet property="publishButton" destination="kaV-Nf-KmS" id="6yv-vb-8Vp"/>
+                        <outlet property="screenButton" destination="hgh-oK-MWl" id="wuW-3u-ddm"/>
                         <outlet property="videoBitrateLabel" destination="dLf-ee-K3I" id="hto-Gs-HwU"/>
                         <outlet property="videoBitrateSlider" destination="4s5-OW-qAO" id="IKu-cc-gGp"/>
                         <outlet property="zoomSlider" destination="Qnn-SP-eWm" id="FjO-E6-f1K"/>

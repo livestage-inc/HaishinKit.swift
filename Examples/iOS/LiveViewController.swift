@@ -3,6 +3,7 @@ import HaishinKit
 import Photos
 import UIKit
 import VideoToolbox
+import ReplayKit
 
 final class LiveViewController: UIViewController {
     private static let maxRetryCount: Int = 5
@@ -10,6 +11,7 @@ final class LiveViewController: UIViewController {
     @IBOutlet private weak var lfView: MTHKView!
     @IBOutlet private weak var currentFPSLabel: UILabel!
     @IBOutlet private weak var publishButton: UIButton!
+    @IBOutlet private weak var screenButton: UIButton!
     @IBOutlet private weak var pauseButton: UIButton!
     @IBOutlet private weak var videoBitrateLabel: UILabel!
     @IBOutlet private weak var videoBitrateSlider: UISlider!
@@ -69,7 +71,7 @@ final class LiveViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         logger.info("viewWillAppear")
         super.viewWillAppear(animated)
-        rtmpStream.attachAudio(AVCaptureDevice.default(for: .audio)) { error in
+        /*rtmpStream.attachAudio(AVCaptureDevice.default(for: .audio)) { error in
             logger.warn(error)
         }
         let back = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: currentPosition)
@@ -80,7 +82,7 @@ final class LiveViewController: UIViewController {
             let front = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
             rtmpStream.videoCapture(for: 1)?.isVideoMirrored = true
             rtmpStream.attachMultiCamera(front)
-        }
+        }*/
         rtmpStream.addObserver(self, forKeyPath: "currentFPS", options: .new, context: nil)
         lfView?.attachStream(rtmpStream)
         NotificationCenter.default.addObserver(self, selector: #selector(didInterruptionNotification(_:)), name: AVAudioSession.interruptionNotification, object: nil)
@@ -198,6 +200,22 @@ final class LiveViewController: UIViewController {
         }
         publish.isSelected.toggle()
     }
+    
+    @IBAction func on(screen: UIButton) {
+        if screen.isSelected {
+            UIApplication.shared.isIdleTimerDisabled = false
+            rtmpConnection.close()
+            rtmpConnection.removeEventListener(.rtmpStatus, selector: #selector(rtmpStatusHandler), observer: self)
+            rtmpConnection.removeEventListener(.ioError, selector: #selector(rtmpErrorHandler), observer: self)
+            stopStream()
+        } else {
+            UIApplication.shared.isIdleTimerDisabled = true
+            rtmpConnection.addEventListener(.rtmpStatus, selector: #selector(rtmpStatusHandler), observer: self)
+            rtmpConnection.addEventListener(.ioError, selector: #selector(rtmpErrorHandler), observer: self)
+            rtmpConnection.connect(Preference.defaultInstance.uri!)
+        }
+        screen.isSelected.toggle()
+    }
 
     @objc
     private func rtmpStatusHandler(_ notification: Notification) {
@@ -210,7 +228,8 @@ final class LiveViewController: UIViewController {
         case RTMPConnection.Code.connectSuccess.rawValue:
             retryCount = 0
             rtmpStream.publish(Preference.defaultInstance.streamName!)
-        // sharedObject!.connect(rtmpConnection)
+            startStream()
+            // sharedObject!.connect(rtmpConnection)
         case RTMPConnection.Code.connectFailed.rawValue, RTMPConnection.Code.connectClosed.rawValue:
             guard retryCount <= LiveViewController.maxRetryCount else {
                 return
@@ -294,6 +313,25 @@ final class LiveViewController: UIViewController {
         }
         rtmpStream.videoOrientation = orientation
     }
+    
+    private func startStream() {
+        RPScreenRecorder.shared().startCapture { sampleBuffer, bufferType, error in
+            switch bufferType {
+            case .video:
+                self.rtmpStream.appendSampleBuffer(sampleBuffer)
+                break
+            case .audioApp:
+                self.rtmpStream.appendSampleBuffer(sampleBuffer)
+                break
+            default:
+                break
+            }
+        }
+    }
+    
+    private func stopStream() {
+        RPScreenRecorder.shared().stopCapture()
+    }
 }
 
 extension LiveViewController: RTMPConnectionDelegate {
@@ -334,3 +372,4 @@ extension LiveViewController: IORecorderDelegate {
         })
     }
 }
+
