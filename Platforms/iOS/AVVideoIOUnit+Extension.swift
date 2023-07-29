@@ -27,6 +27,23 @@ extension AVVideoIOUnit {
             logger.error("while locking device for ramp: \(error)")
         }
     }
+    
+    func setISOLevel(_ level: Float) {
+        
+        guard let device: AVCaptureDevice = (input as? AVCaptureDeviceInput)?.device else { return }
+        
+        print(device.activeFormat.minISO, device.activeFormat.maxISO)
+        
+        guard device.activeFormat.minISO <= level && level < device.activeFormat.maxISO
+            else { return }
+        do {
+            try device.lockForConfiguration()
+            device.setExposureModeCustom(duration: device.exposureDuration, iso: level)
+            device.unlockForConfiguration()
+        } catch let error as NSError {
+            logger.error("while locking device for ramp: \(error)")
+        }
+    }
 
     func attachScreen(_ screen: CaptureSessionConvertible?, useScreenSize: Bool = true) {
         guard let screen = screen else {

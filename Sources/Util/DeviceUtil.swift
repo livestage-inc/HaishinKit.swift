@@ -45,9 +45,19 @@ extension AVCaptureDevice {
 
 public struct DeviceUtil {
     public static func device(withPosition: AVCaptureDevice.Position) -> AVCaptureDevice? {
-        AVCaptureDevice.devices().first {
-            $0.hasMediaType(.video) && $0.position == withPosition
+        
+        if #available(iOS 13.0, *) {
+            let device = AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
+
+            return device
+        } else {
+            // Fallback on earlier versions
+            return nil
         }
+        
+//        AVCaptureDevice.devices().first {
+//            $0.hasMediaType(.video) && $0.position == withPosition
+//        }
     }
 
     public static func device(withLocalizedName: String, mediaType: AVMediaType) -> AVCaptureDevice? {
