@@ -354,12 +354,16 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
 
     #if os(iOS) || os(macOS)
     func attachCamera(_ camera: AVCaptureDevice?) throws {
+        
+        setZoomFactor(2.0, ramping: false, withRate: 1)
+        
         guard let mixer: AVMixer = mixer else {
             return
         }
 
         mixer.session.beginConfiguration()
         defer {
+            setZoomFactor(2.0, ramping: false, withRate: 1)
             mixer.session.commitConfiguration()
             if torch {
                 setTorchMode(.on)
@@ -398,6 +402,8 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
         fps *= 1
         position = camera.position
         renderer?.position = camera.position
+        
+        setZoomFactor(2.0, ramping: false, withRate: 1)
     }
 
     func setTorchMode(_ torchMode: AVCaptureDevice.TorchMode) {
