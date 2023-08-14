@@ -34,6 +34,21 @@ open class NetStream: NSObject {
             }
         }
     }
+    
+    open var initialZoom: CGFloat {
+        get {
+            var initialZoom: CGFloat = 1.0
+            ensureLockQueue {
+                initialZoom = self.mixer.videoIO.initialZoom
+            }
+            return initialZoom
+        }
+        set {
+            lockQueue.async {
+                self.mixer.videoIO.initialZoom = newValue
+            }
+        }
+    }
 
     /// Specify stream video orientation.
     open var videoOrientation: AVCaptureVideoOrientation {

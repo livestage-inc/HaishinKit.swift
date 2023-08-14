@@ -192,6 +192,8 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
             setTorchMode(torch ? .on : .off)
         }
     }
+    
+    var initialZoom: CGFloat = 1.0
 
     var continuousAutofocus = false {
         didSet {
@@ -362,8 +364,8 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
             if torch {
                 setTorchMode(.on)
             }
-            if zoomFactor {
-                setZoomFactor(zoomFactor, ramping: false, withRate: 1)
+            if initialZoom {
+                setZoomFactor(initialZoom, ramping: false, withRate: 1)
             }
         }
 
