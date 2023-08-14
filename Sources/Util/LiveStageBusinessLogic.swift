@@ -534,7 +534,7 @@ extension RandomAccessCollection {
 func save_cgimage_to_jpeg (image: CGImage) -> CFData?
 {
     let data = CFDataCreateMutable(nil,0);
-    if let dest = CGImageDestinationCreateWithData(data!, "public.heic" as CFString, 1, [:] as CFDictionary) {
+    if let dest = CGImageDestinationCreateWithData(data!, "public.jpeg" as CFString, 1, [:] as CFDictionary) {
         CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:0.9] as CFDictionary)
         
         CGImageDestinationAddImage (dest, image, [:] as CFDictionary);
