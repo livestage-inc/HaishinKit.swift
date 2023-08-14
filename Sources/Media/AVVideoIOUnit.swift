@@ -362,6 +362,9 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
             if torch {
                 setTorchMode(.on)
             }
+            if zoomFactor {
+                setZoomFactor(zoomFactor, ramping: false, withRate: 1)
+            }
         }
 
         output = nil
