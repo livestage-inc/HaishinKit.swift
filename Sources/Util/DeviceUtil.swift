@@ -45,7 +45,7 @@ extension AVCaptureDevice {
 
 public struct DeviceUtil {
     
-    private var allCaptureDevices: [AVCaptureDevice] {
+    private static var allCaptureDevices: [AVCaptureDevice] {
         if #available(iOS 13.0, *) {
         AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualCamera, .builtInDualWideCamera, .builtInWideAngleCamera], mediaType: .video, position: .unspecified).devices
         } else {
@@ -54,7 +54,7 @@ public struct DeviceUtil {
         }
     }
     
-    private var backCaptureDevices: [AVCaptureDevice] {
+    private static var backCaptureDevices: [AVCaptureDevice] {
         allCaptureDevices
             .filter { $0.position == .back }
     }
