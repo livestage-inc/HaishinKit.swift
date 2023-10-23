@@ -47,7 +47,7 @@ public struct DeviceUtil {
     
     private static var allCaptureDevices: [AVCaptureDevice] {
         if #available(iOS 13.0, *) {
-        AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualCamera, .builtInDualWideCamera, .builtInWideAngleCamera], mediaType: .video, position: .unspecified).devices
+            return AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualCamera, .builtInDualWideCamera, .builtInWideAngleCamera], mediaType: .video, position: .unspecified).devices
         } else {
             // Fallback on earlier versions
             return []
