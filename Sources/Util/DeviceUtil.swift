@@ -46,7 +46,12 @@ extension AVCaptureDevice {
 public struct DeviceUtil {
     
     private var allCaptureDevices: [AVCaptureDevice] {
-        AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualCamera, .builtInDualWideCamera, .builtInWideAngleCamera, .builtInLiDARDepthCamera, .builtInTrueDepthCamera], mediaType: .video, position: .unspecified).devices
+        if #available(iOS 13.0, *) {
+        AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualCamera, .builtInDualWideCamera, .builtInWideAngleCamera], mediaType: .video, position: .unspecified).devices
+        } else {
+            // Fallback on earlier versions
+            return []
+        }
     }
     
     private var backCaptureDevices: [AVCaptureDevice] {
@@ -55,15 +60,11 @@ public struct DeviceUtil {
     }
     
     public static func device(withPosition: AVCaptureDevice.Position) -> AVCaptureDevice? {
-        
-        if #available(iOS 13.0, *) {
-            let device = backCaptureDevices.first //AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
+    
+        let device = backCaptureDevices.first //AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
 
-            return device
-        } else {
-            // Fallback on earlier versions
-            return nil
-        }
+        return device
+        
         
 //        AVCaptureDevice.devices().first {
 //            $0.hasMediaType(.video) && $0.position == withPosition
