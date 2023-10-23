@@ -44,10 +44,20 @@ extension AVCaptureDevice {
 }
 
 public struct DeviceUtil {
+    
+    private var allCaptureDevices: [AVCaptureDevice] {
+        AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInTripleCamera, .builtInDualCamera, .builtInDualWideCamera, .builtInWideAngleCamera, .builtInLiDARDepthCamera, .builtInTrueDepthCamera], mediaType: .video, position: .unspecified).devices
+    }
+    
+    private var backCaptureDevices: [AVCaptureDevice] {
+        allCaptureDevices
+            .filter { $0.position == .back }
+    }
+    
     public static func device(withPosition: AVCaptureDevice.Position) -> AVCaptureDevice? {
         
         if #available(iOS 13.0, *) {
-            let device = AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
+            let device = backCaptureDevices.first //AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
 
             return device
         } else {
