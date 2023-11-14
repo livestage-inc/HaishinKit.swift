@@ -357,8 +357,10 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
         
         let usedDevice = DeviceUtil.device(withPosition: .back)
         
-        if usedDevice?.deviceType == .builtInTripleCamera {
-            setZoomFactor(2.0, ramping: false, withRate: 1)
+        if #available(iOS 13.0, *) {
+            if usedDevice?.deviceType == .builtInTripleCamera {
+                setZoomFactor(2.0, ramping: false, withRate: 1)
+            }
         }
         
         guard let mixer: AVMixer = mixer else {
@@ -367,16 +369,20 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
 
         mixer.session.beginConfiguration()
         defer {
-            if usedDevice?.deviceType == .builtInTripleCamera {
-                setZoomFactor(2.0, ramping: false, withRate: 1)
+            if #available(iOS 13.0, *) {
+                if usedDevice?.deviceType == .builtInTripleCamera {
+                    setZoomFactor(2.0, ramping: false, withRate: 1)
+                }
             }
             mixer.session.commitConfiguration()
             if torch {
                 setTorchMode(.on)
             }
 //            if initialZoom != 1.0 {
-            if usedDevice?.deviceType == .builtInTripleCamera {
-                setZoomFactor(2.0, ramping: false, withRate: 1)
+            if #available(iOS 13.0, *) {
+                if usedDevice?.deviceType == .builtInTripleCamera {
+                    setZoomFactor(2.0, ramping: false, withRate: 1)
+                }
             }
 //            }
         }
@@ -411,8 +417,10 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
         position = camera.position
         renderer?.position = camera.position
         
-        if usedDevice?.deviceType == .builtInTripleCamera {
-            setZoomFactor(2.0, ramping: false, withRate: 1)
+        if #available(iOS 13.0, *) {
+            if usedDevice?.deviceType == .builtInTripleCamera {
+                setZoomFactor(2.0, ramping: false, withRate: 1)
+            }
         }
     }
 
