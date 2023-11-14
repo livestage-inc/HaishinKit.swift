@@ -355,7 +355,11 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
     #if os(iOS) || os(macOS)
     func attachCamera(_ camera: AVCaptureDevice?) throws {
         
-        setZoomFactor(2.0, ramping: false, withRate: 1)
+        let usedDevice = DeviceUtil.device(withPosition: .back)
+        
+        if usedDevice?.deviceType == .builtInTripleCamera {
+            setZoomFactor(2.0, ramping: false, withRate: 1)
+        }
         
         guard let mixer: AVMixer = mixer else {
             return
@@ -363,13 +367,17 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
 
         mixer.session.beginConfiguration()
         defer {
-            setZoomFactor(2.0, ramping: false, withRate: 1)
+            if usedDevice?.deviceType == .builtInTripleCamera {
+                setZoomFactor(2.0, ramping: false, withRate: 1)
+            }
             mixer.session.commitConfiguration()
             if torch {
                 setTorchMode(.on)
             }
 //            if initialZoom != 1.0 {
-            setZoomFactor(2.0, ramping: false, withRate: 1)
+            if usedDevice?.deviceType == .builtInTripleCamera {
+                setZoomFactor(2.0, ramping: false, withRate: 1)
+            }
 //            }
         }
 
@@ -403,7 +411,9 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
         position = camera.position
         renderer?.position = camera.position
         
-        setZoomFactor(2.0, ramping: false, withRate: 1)
+        if usedDevice?.deviceType == .builtInTripleCamera {
+            setZoomFactor(2.0, ramping: false, withRate: 1)
+        }
     }
 
     func setTorchMode(_ torchMode: AVCaptureDevice.TorchMode) {
