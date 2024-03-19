@@ -169,7 +169,7 @@ public class LiveStageFastStorage {
                             
                             self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, data: data as Data))
                             
-                            if self.highResFrameCaptures.count > 600 {
+                            if self.highResFrameCaptures.count > 120 {
                                 self.highResFrameCaptures.removeFirst()
                             }
                             
@@ -499,7 +499,7 @@ public class LiveStageViewer {
 class RateLimiter {
     
     private let syncQueue = DispatchQueue(label: "com.samsoffes.ratelimit", attributes: [])
-    public let limit: TimeInterval = 0.1
+    public let limit: TimeInterval = 0.5
     public private(set) var lastExecutedAt: Date?
     
     func feed(block: ()->Void) {
