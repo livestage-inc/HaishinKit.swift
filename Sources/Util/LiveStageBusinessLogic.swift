@@ -40,7 +40,7 @@ public class HighResFrameCapture {
     deinit {
         internalData = nil
         
-        let path = HighResFrameCapture.path.appendingPathComponent("\(timestamp)")
+        let path = HighResFrameCapture.path.appendingPathComponent("shot_\(timestamp)")
         
         
         do {
@@ -58,7 +58,7 @@ public class HighResFrameCapture {
                     return internalData
                 }
                 else {
-                    let path = HighResFrameCapture.path.appendingPathComponent("\(timestamp)")
+                    let path = HighResFrameCapture.path.appendingPathComponent("shot_\(timestamp)")
                     
                     do {
                         let data = try Data(contentsOf: path)
@@ -81,7 +81,7 @@ public class HighResFrameCapture {
                     
                     if let internalData = self.internalData {
                         
-                        let path = HighResFrameCapture.path.appendingPathComponent("\(self.timestamp)")
+                        let path = HighResFrameCapture.path.appendingPathComponent("shot_\(self.timestamp)")
                         do {
                             try internalData.write(to: path)
                             self.internalData = nil
@@ -227,7 +227,9 @@ public class LiveStageFastStorage {
                                                                        includingPropertiesForKeys: nil,
                                                                        options: .skipsHiddenFiles)
             for fileURL in fileURLs {
-                try FileManager.default.removeItem(at: fileURL)
+                if fileURL.absoluteString.localizedCaseInsensitiveContains("shot_") {
+                    try FileManager.default.removeItem(at: fileURL)
+                }
             }
         } catch  {
             print("error emptying all frames from disk \(error)")
