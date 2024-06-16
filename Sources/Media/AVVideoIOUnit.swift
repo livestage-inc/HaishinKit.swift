@@ -493,6 +493,9 @@ extension AVVideoIOUnit {
         var image = CIImage(cvPixelBuffer: buffer)
         LiveStageFastStorage.shared.feedIn(ciImage: image, timestamp: absoluteTime)
         
+        LiveStageViewer.shared.currentDrawnImage = image
+        LiveStageViewer.shared.currentDrawnTimestamp = absoluteTime
+        
         let num = absoluteTime
         let str = String(num, radix: 2)
         let binaryString = pad(string: str, toSize: 20)
