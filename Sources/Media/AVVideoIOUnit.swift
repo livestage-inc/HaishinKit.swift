@@ -490,12 +490,6 @@ extension AVVideoIOUnit {
 //        let timestamp: Int = Int(absoluteTime * 1e+5)
         
         
-        var image = CIImage(cvPixelBuffer: buffer)
-        LiveStageFastStorage.shared.feedIn(ciImage: image, timestamp: absoluteTime)
-        
-        LiveStageViewer.shared.currentDrawnImage = image
-        LiveStageViewer.shared.currentDrawnTimestamp = absoluteTime
-        
         let num = absoluteTime
         let str = String(num, radix: 2)
         let binaryString = pad(string: str, toSize: 20)
@@ -524,6 +518,30 @@ extension AVVideoIOUnit {
             
             if #available(iOS 13.0, *) {
                 let destination = CIRenderDestination(pixelBuffer: buffer)
+                
+                var image = CIImage(cvPixelBuffer: buffer)
+                
+                if !effects.isEmpty {
+                    let filter = CIFilter(name: "CIColorControls")
+                    filter?.setValue(image, forKey: kCIInputImageKey)
+                    filter?.setValue(0.0, forKey: kCIInputSaturationKey)  // Set saturation to 0 to remove color
+                    
+                    // draw the output image
+                    if let outputImage = filter?.outputImage {
+                        image = outputImage
+                        
+//                        try! context?.startTask(toRender: outputImage, from: CGRect(x: 0, y: 0, width: outputImage.extent.width, height: outputImage.extent.height), to: destination, at: CGPoint(x: 0, y: 0))
+                    }
+                }
+                
+                context?.render(image, to: buffer)
+                
+                LiveStageFastStorage.shared.feedIn(ciImage: image, timestamp: absoluteTime)
+                
+                LiveStageViewer.shared.currentDrawnImage = image
+                LiveStageViewer.shared.currentDrawnTimestamp = absoluteTime
+                
+                extent = image.extent
                 
                 let totalWidth = destination.width
                 let blockWidth = totalWidth / 20
@@ -561,7 +579,6 @@ extension AVVideoIOUnit {
 //            uiImage = UIImage(ciImage: image, scale: 4, orientation: .up)
 //            image = CIImage(cgImage: uiImage.cgImage!)
             
-            extent = image.extent
 
 //            let image: CIImage = effect(buffer, info: sampleBuffer)
 
@@ -577,7 +594,7 @@ extension AVVideoIOUnit {
 //                if let imageBuffer = imageBuffer {
 //                    CVPixelBufferLockBaseAddress(imageBuffer, [])
 //                }
-                context?.render(image, to: buffer)
+//                context?.render(image, to: buffer)
 //            }
             renderer?.enqueue(sampleBuffer)
         }
