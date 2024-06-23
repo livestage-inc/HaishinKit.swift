@@ -138,6 +138,12 @@ open class NetStream: NSObject {
             self.mixer.videoIO.unregisterEffect(effect)
         }
     }
+    
+    open func registerExposure(_ value: CGFloat) -> Bool {
+        mixer.videoIO.lockQueue.sync {
+            self.mixer.videoIO.registerExposure(value)
+        }
+    }
 
     open func registerAudioEffect(_ effect: AudioEffect) -> Bool {
         mixer.audioIO.lockQueue.sync {

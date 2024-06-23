@@ -91,6 +91,8 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
     weak var mixer: AVMixer?
 
     private(set) var effects: Set<VideoEffect> = []
+    private(set) var exposureValue: CGFloat = 0
+    
 
     private var extent = CGRect.zero {
         didSet {
@@ -457,6 +459,11 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
         effect.ciContext = nil
         return effects.remove(effect) != nil
     }
+    
+    func registerExposure(_ value: CGFloat) -> Bool {
+        exposureValue = value
+        return true
+    }
 }
 
 extension AVVideoIOUnit {
@@ -525,6 +532,20 @@ extension AVVideoIOUnit {
                     let filter = CIFilter(name: "CIColorControls")
                     filter?.setValue(image, forKey: kCIInputImageKey)
                     filter?.setValue(0.0, forKey: kCIInputSaturationKey)  // Set saturation to 0 to remove color
+                    
+                    // draw the output image
+                    if let outputImage = filter?.outputImage {
+                        image = outputImage
+                        
+//                        try! context?.startTask(toRender: outputImage, from: CGRect(x: 0, y: 0, width: outputImage.extent.width, height: outputImage.extent.height), to: destination, at: CGPoint(x: 0, y: 0))
+                    }
+                }
+                
+                if exposureValue != 0 {
+                    
+                    let filter = CIFilter(name: "CIExposureAdjust")
+                    filter?.setValue(image, forKey: kCIInputImageKey)
+                    filter?.setValue(exposureValue, forKey: "inputEV")  // Set saturation to 0 to remove color
                     
                     // draw the output image
                     if let outputImage = filter?.outputImage {

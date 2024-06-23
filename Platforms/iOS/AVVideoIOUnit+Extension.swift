@@ -32,14 +32,22 @@ extension AVVideoIOUnit {
         
         guard let device: AVCaptureDevice = (input as? AVCaptureDeviceInput)?.device else { return }
         
-        print(device.activeFormat.minISO, device.activeFormat.maxISO)
+        print("pawan: haishinKit: level: \(level) setISOLevel: \(device.activeFormat.minISO),\(device.activeFormat.maxISO)")
         
-        guard device.activeFormat.minISO <= level && level < device.activeFormat.maxISO
+        let isoValue = device.activeFormat.minISO + (device.activeFormat.maxISO - device.activeFormat.minISO) * (level / 100.0)
+        
+        guard device.activeFormat.minISO <= isoValue && isoValue < device.activeFormat.maxISO
             else { return }
         do {
-            try device.lockForConfiguration()
-            device.setExposureModeCustom(duration: device.exposureDuration, iso: level)
-            device.unlockForConfiguration()
+            
+            if device.isExposureModeSupported(.custom) {
+                try device.lockForConfiguration()
+                device.setExposureModeCustom(duration: device.exposureDuration, iso: isoValue)
+                device.unlockForConfiguration()
+            }
+            else {
+                print("pawan: haishinKit: ExposureModeCustom: not supprted")
+            }
         } catch let error as NSError {
             logger.error("while locking device for ramp: \(error)")
         }
