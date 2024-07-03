@@ -501,7 +501,7 @@ public class LiveStageViewer {
 class RateLimiter {
     
     private let syncQueue = DispatchQueue(label: "com.samsoffes.ratelimit", attributes: [])
-    public let limit: TimeInterval = 0.125
+    public let limit: TimeInterval = 0.167
     public private(set) var lastExecutedAt: Date?
     
     func feed(block: ()->Void) {
