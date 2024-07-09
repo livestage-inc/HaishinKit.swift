@@ -528,6 +528,8 @@ extension AVVideoIOUnit {
                 
                 var image = CIImage(cvPixelBuffer: buffer)
                 
+                var wasImageModified = false
+                
                 if !effects.isEmpty {
                     let filter = CIFilter(name: "CIColorControls")
                     filter?.setValue(image, forKey: kCIInputImageKey)
@@ -536,6 +538,7 @@ extension AVVideoIOUnit {
                     // draw the output image
                     if let outputImage = filter?.outputImage {
                         image = outputImage
+                        wasImageModified = true
                         
 //                        try! context?.startTask(toRender: outputImage, from: CGRect(x: 0, y: 0, width: outputImage.extent.width, height: outputImage.extent.height), to: destination, at: CGPoint(x: 0, y: 0))
                     }
@@ -550,12 +553,15 @@ extension AVVideoIOUnit {
                     // draw the output image
                     if let outputImage = filter?.outputImage {
                         image = outputImage
+                        wasImageModified = true
                         
 //                        try! context?.startTask(toRender: outputImage, from: CGRect(x: 0, y: 0, width: outputImage.extent.width, height: outputImage.extent.height), to: destination, at: CGPoint(x: 0, y: 0))
                     }
                 }
                 
-                context?.render(image, to: buffer)
+                if wasImageModified {
+                    context?.render(image, to: buffer)
+                }
                 
                 LiveStageFastStorage.shared.feedIn(ciImage: image, timestamp: absoluteTime)
                 

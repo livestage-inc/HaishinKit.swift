@@ -131,7 +131,7 @@ public class LiveStageFastStorage {
 //    let id = "dixit"
     
     var highResFrameCaptures = [HighResFrameCapture]()
-    let ciContext = CIContext(options: [CIContextOption.highQualityDownsample : false])
+    let ciContext = CIContext(options: [CIContextOption.highQualityDownsample : false, .useSoftwareRenderer : false])
     //    let ciContext = CIContext(options: [CIContextOption.useSoftwareRenderer: false])
     
     let rateLimiter = RateLimiter()
@@ -169,7 +169,7 @@ public class LiveStageFastStorage {
                             
                             self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, data: data as Data))
                             
-                            if self.highResFrameCaptures.count > 120 {
+                            if self.highResFrameCaptures.count > 270 {
                                 self.highResFrameCaptures.removeFirst()
                             }
                             
