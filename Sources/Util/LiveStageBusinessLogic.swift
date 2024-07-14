@@ -32,12 +32,10 @@ public class HighResFrameCapture {
     let timestamp: Int
     private var internalData: Data?
     
-    init(timestamp: Int, image: CGImage) {
+    init(timestamp: Int, data: Data) {
         self.timestamp = timestamp
-        self.image = image
+        self.data = data
     }
-    
-    let image: CGImage
     
     deinit {
         internalData = nil
@@ -52,56 +50,50 @@ public class HighResFrameCapture {
         }
     }
     
+    
     public var data: Data? {
-//        readWriteToStorageSerialQueue.sync {
-            return dataFromImage(image: self.image) as Data?
-//        }
+        get {
+            readWriteToStorageSerialQueue.sync {
+                if let internalData = internalData {
+                    return internalData
+                }
+                else {
+                    let path = HighResFrameCapture.path.appendingPathComponent("shot_\(timestamp)")
+                    
+                    do {
+                        let data = try Data(contentsOf: path)
+                        return data
+                    } catch (let error) {
+                        print("error reading frame to disk \(error)")
+                        return nil
+                    }
+                }
+            }
+        }
+        
+        set {
+            readWriteToStorageSerialQueue.sync {
+                
+                self.internalData = newValue
+  
+                // start offloading data to disk
+                HighResFrameCapture.writeToStorageConcurrentQueue.async {
+                    
+                    if let internalData = self.internalData {
+                        
+                        let path = HighResFrameCapture.path.appendingPathComponent("shot_\(self.timestamp)")
+                        do {
+                            try internalData.write(to: path)
+                            self.internalData = nil
+                        } catch (let error) {
+                            print("error wrting frame to disk \(error)")
+                        }
+                    }
+                }
+                
+            }
+        }
     }
-    
-    
-//    public var data: Data? {
-//        get {
-//            readWriteToStorageSerialQueue.sync {
-//                if let internalData = internalData {
-//                    return internalData
-//                }
-//                else {
-//                    let path = HighResFrameCapture.path.appendingPathComponent("shot_\(timestamp)")
-//                    
-//                    do {
-//                        let data = try Data(contentsOf: path)
-//                        return data
-//                    } catch (let error) {
-//                        print("error reading frame to disk \(error)")
-//                        return nil
-//                    }
-//                }
-//            }
-//        }
-//        
-//        set {
-//            readWriteToStorageSerialQueue.sync {
-//                
-//                self.internalData = newValue
-//  
-//                // start offloading data to disk
-//                HighResFrameCapture.writeToStorageConcurrentQueue.async {
-//                    
-//                    if let internalData = self.internalData {
-//                        
-//                        let path = HighResFrameCapture.path.appendingPathComponent("shot_\(self.timestamp)")
-//                        do {
-//                            try internalData.write(to: path)
-//                            self.internalData = nil
-//                        } catch (let error) {
-//                            print("error wrting frame to disk \(error)")
-//                        }
-//                    }
-//                }
-//                
-//            }
-//        }
-//    }
 }
 
 enum UploadState {
@@ -171,11 +163,11 @@ public class LiveStageFastStorage {
                                         index -= 1
                                     }
                                     
-                                    self.highResFrameCaptures.insert(HighResFrameCapture(timestamp: timestamp, image: data), at: index)
+                                    self.highResFrameCaptures.insert(HighResFrameCapture(timestamp: timestamp, data: data as Data), at: index)
                                 }
                             }
                             
-                            self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, image: data))
+                            self.highResFrameCaptures.append(HighResFrameCapture(timestamp: timestamp, data: data as Data))
                             
                             if self.highResFrameCaptures.count > 90 {
                                 self.highResFrameCaptures.removeFirst()
@@ -541,12 +533,8 @@ extension RandomAccessCollection {
     }
 }
 
-func save_cgimage_to_jpeg (image: CGImage) -> CGImage?
+func save_cgimage_to_jpeg (image: CGImage) -> CFData?
 {
-    return image
-}
-
-func dataFromImage(image: CGImage) -> CFData? {
     let data = CFDataCreateMutable(nil,0);
     if let dest = CGImageDestinationCreateWithData(data!, "public.jpeg" as CFString, 1, [:] as CFDictionary) {
         CGImageDestinationSetProperties(dest, [kCGImageDestinationLossyCompressionQuality:0.9] as CFDictionary)
