@@ -61,14 +61,14 @@ public struct DeviceUtil {
     
     public static func device(withPosition: AVCaptureDevice.Position) -> AVCaptureDevice? {
     
-        let device = backCaptureDevices.first //AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
-
-        return device
+//        let device = backCaptureDevices.first //AVCaptureDevice.default(.builtInTripleCamera, for: .video, position: .back)
+//
+//        return device
         
         
-//        AVCaptureDevice.devices().first {
-//            $0.hasMediaType(.video) && $0.position == withPosition
-//        }
+        AVCaptureDevice.devices().first {
+            $0.hasMediaType(.video) && $0.position == withPosition
+        }
     }
 
     public static func device(withLocalizedName: String, mediaType: AVMediaType) -> AVCaptureDevice? {
