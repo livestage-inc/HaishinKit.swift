@@ -480,6 +480,12 @@ extension AVVideoIOUnit {
             return
         }
 
+        let combinationFrameAndSuffixStreamSettings = "\(frameNumber)" + LiveStageViewer.shared.codeForMakePhotoOpportunity()
+
+        guard let num = Int(combinationFrameAndSuffixStreamSettings) else {
+            return
+        }
+
 //        var imageBuffer: CVImageBuffer?
 
         CVPixelBufferLockBaseAddress(buffer, [])
@@ -497,9 +503,8 @@ extension AVVideoIOUnit {
 //        let timestamp: Int = Int(absoluteTime * 1e+5)
         
         
-        let num = absoluteTime
         let str = String(num, radix: 2)
-        let binaryString = pad(string: str, toSize: 20)
+        let binaryString = pad(string: str, toSize: LiveStageFastStorage.totalBinaryBitsLenght)
 //        print(binaryString)
         
         frameNumber += 1
@@ -571,8 +576,8 @@ extension AVVideoIOUnit {
                 extent = image.extent
                 
                 let totalWidth = destination.width
-                let blockWidth = totalWidth / 20
-                
+                let blockWidth = totalWidth / LiveStageFastStorage.totalBinaryBitsLenght
+
                 try! context?.startTask(toRender: CIImage.white, from: CGRect(x: 0, y: 0, width: totalWidth, height: 100), to: destination, at: CGPoint(x: 0, y: 0))
             
 
