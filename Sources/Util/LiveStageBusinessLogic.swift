@@ -127,7 +127,8 @@ class UploadTask {
 public class LiveStageFastStorage {
     
     public static let shared = LiveStageFastStorage()
-    
+    public static let totalBinaryBitsLenght: Int = 30
+
 //    let id = "dixit"
     
     var highResFrameCaptures = [HighResFrameCapture]()
@@ -310,12 +311,26 @@ public class LiveStageFastStorage {
 }
 
 public class LiveStageViewer {
+
+    public enum StreamSettings: String {
+        case photoModeEnabled = "01"
+        case photoModeDisabled = "02"
+
+        public var code: String { rawValue }
+    }
+
     public static let shared = LiveStageViewer()
     
 //    let id = "dixit"
     
     public var currentDrawnTimestamp: Int = 0
     public var currentDrawnImage: CIImage?
+    public var isPhotoModeEnabled: Bool = true
+
+    public func codeForMakePhotoOpportunity() -> String {
+        isPhotoModeEnabled ? StreamSettings.photoModeEnabled.code : StreamSettings.photoModeDisabled.code
+    }
+
 //    let liveStageHttp = LiveStageHTTP()
 //
 //    init() {
