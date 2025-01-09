@@ -325,10 +325,10 @@ public class LiveStageViewer {
     
     public var currentDrawnTimestamp: Int = 0
     public var currentDrawnImage: CIImage?
-    public var isMakePhotoEnabled: Bool = true
+    public var isPhotoModeEnabled: Bool = true
 
     public func codeForMakePhotoOpportunity() -> String {
-        isMakePhotoEnabled ? StreamSettings.photoModeEnabled.code : StreamSettings.photoModeDisabled.code
+        isPhotoModeEnabled ? StreamSettings.photoModeEnabled.code : StreamSettings.photoModeDisabled.code
     }
 
 //    let liveStageHttp = LiveStageHTTP()
