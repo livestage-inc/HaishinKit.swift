@@ -499,7 +499,7 @@ extension AVVideoIOUnit {
 //        let ioSurface = CVPixelBufferGetIOSurface(buffer)
         
         // This came from the capture output step so lets record the timestamp and feed the frame for livestage storage
-        let absoluteTime = frameNumber//Date.timeIntervalSinceReferenceDate
+        let absoluteTime = num//Date.timeIntervalSinceReferenceDate
 //        let timestamp: Int = Int(absoluteTime * 1e+5)
         
         
