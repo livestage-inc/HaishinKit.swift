@@ -29,7 +29,7 @@ public class HighResFrameCapture {
     static let path = FileManager.default.urls(for: .documentDirectory,
                                                in: .userDomainMask)[0]
     
-    let timestamp: Int
+    public let timestamp: Int
     private var internalData: Data?
     
     init(timestamp: Int, data: Data) {
