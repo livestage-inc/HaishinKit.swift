@@ -356,7 +356,8 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
 
     #if os(iOS) || os(macOS)
     func attachCamera(_ camera: AVCaptureDevice?) throws {
-        
+
+        let zoom: CGFloat = camera?.videoZoomFactor ?? 1.0
         let usedDevice = DeviceUtil.device(withPosition: .back)
         
         if #available(iOS 13.0, *) {
@@ -399,6 +400,7 @@ final class AVVideoIOUnit: NSObject, AVIOUnit {
         #endif
 
         input = try AVCaptureDeviceInput(device: camera)
+        camera.videoZoomFactor = zoom
         mixer.session.addOutput(output)
 
         for connection in output.connections {
