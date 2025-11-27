@@ -5,6 +5,8 @@ final class VideoCaptureUnit: CaptureUnit {
     enum Error: Swift.Error {
         case multiCamNotSupported
     }
+    
+    private var frameStripeRenderer: (any FrameStripeRendererProtocol)?
 
     let lockQueue = DispatchQueue(label: "com.haishinkit.HaishinKit.VideoCaptureUnit.lock")
 
@@ -166,10 +168,22 @@ final class VideoCaptureUnit: CaptureUnit {
 extension VideoCaptureUnit: VideoMixerDelegate {
     // MARK: VideoMixerDelegate
     func videoMixer(_ videoMixer: VideoMixer<VideoCaptureUnit>, track: UInt8, didInput sampleBuffer: CMSampleBuffer) {
+        frameStripeRenderer?.renderStripe(on: sampleBuffer)
         inputsContinuation?.yield((track, sampleBuffer))
     }
 
     func videoMixer(_ videoMixer: VideoMixer<VideoCaptureUnit>, didOutput sampleBuffer: CMSampleBuffer) {
         outputContinuation?.yield(sampleBuffer)
     }
+}
+
+extension VideoCaptureUnit {
+    func setFrameStripeRenderer(frameStripeRenderer: any FrameStripeRendererProtocol) {
+        self.frameStripeRenderer = frameStripeRenderer
+    }
+}
+
+public protocol FrameStripeRendererProtocol {
+
+    func renderStripe(on sampleBuffer: CMSampleBuffer)
 }
