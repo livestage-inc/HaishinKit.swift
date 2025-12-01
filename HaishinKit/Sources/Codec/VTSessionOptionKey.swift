@@ -50,6 +50,9 @@ struct VTSessionOptionKey: Codable, RawRepresentable {
     @available(iOS 16.0, tvOS 16.0, macOS 13.0, *)
     static let constantBitRate = VTSessionOptionKey(rawValue: kVTCompressionPropertyKey_ConstantBitRate as String)
 
+    @available(iOS 26.0, tvOS 26.0, macOS 26.0, *)
+    static let variableBitRate = VTSessionOptionKey(rawValue: kVTCompressionPropertyKey_VariableBitRate as String)
+
     let rawValue: String
 
     var CFString: CFString {

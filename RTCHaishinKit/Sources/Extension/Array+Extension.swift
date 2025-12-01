@@ -16,4 +16,17 @@ extension Array where Element == String {
         }
         return loop(0, [], body)
     }
+
+    func withCStringArray<R>(_ body: (UnsafeMutablePointer<UnsafePointer<CChar>?>) -> R) -> R {
+        let cStrings = self.map { $0.utf8CString }
+        let pointerArray = UnsafeMutablePointer<UnsafePointer<CChar>?>.allocate(capacity: cStrings.count)
+        for (i, cString) in cStrings.enumerated() {
+            cString.withUnsafeBufferPointer { buf in
+                pointerArray[i] = buf.baseAddress
+            }
+        }
+        let result = body(pointerArray)
+        pointerArray.deallocate()
+        return result
+    }
 }

@@ -1,4 +1,4 @@
-enum RTCError: RawRepresentable, Swift.Error {
+public enum RTCError: RawRepresentable, Swift.Error {
     @discardableResult
     static func check(_ result: Int32) throws -> Int32 {
         if result < 0 {
@@ -7,7 +7,7 @@ enum RTCError: RawRepresentable, Swift.Error {
         return result
     }
 
-    typealias RawValue = Int32
+    public typealias RawValue = Int32
 
     case invalid
     case failure
@@ -15,7 +15,7 @@ enum RTCError: RawRepresentable, Swift.Error {
     case tooSmall
     case undefined(value: Int32)
 
-    var rawValue: Int32 {
+    public var rawValue: Int32 {
         switch self {
         case .invalid:
             return -1
@@ -30,7 +30,7 @@ enum RTCError: RawRepresentable, Swift.Error {
         }
     }
 
-    init(rawValue: Int32) {
+    public init(rawValue: Int32) {
         switch rawValue {
         case -1:
             self = .invalid

@@ -10,7 +10,7 @@ import Testing
         #expect(Int32.max.bigEndian.data == Data([127, 255, 255, 255]))
     }
 
-    @Test func uInt32() {
+    @Test func uint32() {
         #expect(UInt32.min.bigEndian.data == Data([0, 0, 0, 0]))
         #expect(UInt32(32).bigEndian.data == Data([0, 0, 0, 32]))
         #expect(UInt32.max.bigEndian.data == Data([255, 255, 255, 255]))
@@ -22,7 +22,7 @@ import Testing
         #expect(Int64.max.bigEndian.data == Data([127, 255, 255, 255, 255, 255, 255, 255]))
     }
 
-    @Test func uInt64() {
+    @Test func uint64() {
         #expect(UInt64.min.bigEndian.data == Data([0, 0, 0, 0, 0, 0, 0, 0]))
         #expect(UInt64(32).bigEndian.data == Data([0, 0, 0, 0, 0, 0, 0, 32]))
         #expect(UInt64.max.bigEndian.data == Data([255, 255, 255, 255, 255, 255, 255, 255]))

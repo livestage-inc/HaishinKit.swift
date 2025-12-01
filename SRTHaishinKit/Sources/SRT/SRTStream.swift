@@ -9,6 +9,11 @@ public actor SRTStream {
     static let supportedAudioCodecs: [AudioCodecSettings.Format] = [.aac]
     static let supportedVideoCodecs: [VideoCodecSettings.Format] = VideoCodecSettings.Format.allCases
 
+    /// The expected medias for transport stream.
+    public var expectedMedias: Set<AVMediaType> {
+        writer.expectedMedias
+    }
+
     @Published public private(set) var readyState: StreamReadyState = .idle
     public private(set) var videoTrackId: UInt8? = UInt8.max
     public private(set) var audioTrackId: UInt8? = UInt8.max
@@ -59,6 +64,9 @@ public actor SRTStream {
         }
         if outgoing.audioInputFormat != nil {
             writer.expectedMedias.insert(.audio)
+        }
+        if writer.expectedMedias.isEmpty {
+            logger.error("Please set expected media.")
         }
         Task {
             for await buffer in outgoing.videoOutputStream {
@@ -118,6 +126,14 @@ public actor SRTStream {
         outgoing.stopRunning()
         Task { await incoming.stopRunning() }
         readyState = .idle
+    }
+
+    /// Sets the expected media.
+    ///
+    /// This sets whether the stream contains audio only, video only, or both. Normally, this is automatically set through the append method.
+    /// If you cannot call the append method before publishing, please use this method to explicitly specify the contents of the stream.
+    public func setExpectedMedias(_ expectedMedias: Set<AVMediaType>) {
+        writer.expectedMedias = expectedMedias
     }
 
     func doInput(_ data: Data) {

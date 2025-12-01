@@ -1,17 +1,18 @@
 import AVFoundation
 
-/**
- * The AudioCodec translate audio data to another format.
- * - seealso: https://developer.apple.com/library/ios/technotes/tn2236/_index.html
- */
+/// The AudioCodec translate audio data to another format.
+/// - seealso: https://developer.apple.com/library/ios/technotes/tn2236/_index.html
 final class AudioCodec {
     static let defaultFrameCapacity: UInt32 = 1024
     static let defaultInputBuffersCursor = 0
 
-    /// Specifies the settings for audio codec.
     var settings: AudioCodecSettings = .default {
         didSet {
-            settings.apply(audioConverter, oldValue: oldValue)
+            if settings.invalidateConverter(oldValue) {
+                inputFormat = nil
+            } else {
+                settings.apply(audioConverter, oldValue: oldValue)
+            }
         }
     }
 
@@ -158,7 +159,7 @@ final class AudioCodec {
     private func makeAudioConverter() -> AVAudioConverter? {
         guard
             let inputFormat,
-            let outputFormat = settings.format.makeOutputAudioFormat(inputFormat, sampleRate: settings.sampleRate) else {
+            let outputFormat = settings.format.makeOutputAudioFormat(inputFormat, sampleRate: settings.sampleRate, channelMap: settings.channelMap) else {
             return nil
         }
         let converter = AVAudioConverter(from: inputFormat, to: outputFormat)

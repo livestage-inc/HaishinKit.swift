@@ -44,12 +44,12 @@ public actor SessionBuilderFactory {
         factories.append(factory)
     }
 
-    func build(_ uri: URL?, method: SessionMethod) throws -> (any Session) {
+    func build(_ uri: URL?, method: SessionMode, configuration: (any SessionConfiguration)?) throws -> (any Session) {
         guard let uri else {
             throw Error.illegalArgument
         }
         for factory in factories where factory.supportedProtocols.contains(uri.scheme ?? "") {
-            return factory.make(uri, method: method)
+            return factory.make(uri, mode: method, configuration: configuration)
         }
         throw Error.notFound
     }

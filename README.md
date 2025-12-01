@@ -32,20 +32,20 @@ Sponsor: [$50 per month](https://github.com/sponsors/shogo4405): Technical suppo
 ### Development
 |Version|Xcode|Swift|
 |:----:|:----:|:----:|
+|2.2.0+|26.0+|6.0+|
 |2.1.0+|16.4+|6.0+|
 
 ### OS
-|iOS|tvOS|macOS|visionOS|Mac Catalyst|watchOS|
+|iOS|tvOS|Mac Catalyst|macOS|visionOS|watchOS|
 |:-:|:-:|:-:|:-:|:-:|:-:|
-|13.0+|13.0+|10.15+|14.0+|1.0+|-|
+|15.0+|15.0+|15.0+|12.0+|1.0+|-|
 
 - SRTHaishinKit is not avaliable for Mac Catalyst. 
 
 ## 📖 Getting Started
 
 > [!IMPORTANT]
-> Some Xcode's debug features may be incompatible and could cause crashes. Please read the following issue and turn them off.
-> https://github.com/HaishinKit/HaishinKit.swift/issues/1722
+> There are several issues that occur when connected to Xcode. Please also refer to [this document](https://github.com/HaishinKit/HaishinKit.swift/blob/main/HaishinKit/Sources/Docs.docc/known-issue.md).
 
 ### 🔧 Examples
 - Reference implementation app for live streaming `publish` and `playback`.

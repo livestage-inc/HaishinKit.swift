@@ -1,4 +1,5 @@
 import SwiftUI
+
 struct ContentView: View {
     enum Tab: String, CaseIterable, Identifiable {
         case playback

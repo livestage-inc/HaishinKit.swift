@@ -16,7 +16,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BCD5C7F72E3F189700A69F16"
+               BlueprintIdentifier = "BC4B7DCB2E86D06700973BD7"
                BuildableName = "Screencast.appex"
                BlueprintName = "Screencast"
                ReferencedContainer = "container:Examples.xcodeproj">

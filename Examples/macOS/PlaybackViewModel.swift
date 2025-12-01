@@ -44,7 +44,7 @@ final class PlaybackViewModel: ObservableObject {
     private func makeSession(_ preference: PreferenceViewModel) async {
         do {
             session = try await SessionBuilderFactory.shared.make(preference.makeURL())
-                .setMethod(.playback)
+                .setMode(.playback)
                 .build()
             guard let session else {
                 return

@@ -24,13 +24,16 @@ enum VTSessionMode {
             guard status == noErr, let session else {
                 throw VTSessionError.failedToCreate(status: status)
             }
-            status = session.setOptions(videoCodec.settings.options(videoCodec))
+            status = session.setOptions(videoCodec.settings.makeOptions())
             guard status == noErr else {
                 throw VTSessionError.failedToPrepare(status: status)
             }
             status = session.prepareToEncodeFrames()
             guard status == noErr else {
                 throw VTSessionError.failedToPrepare(status: status)
+            }
+            if let expectedFrameRate = videoCodec.settings.expectedFrameRate {
+                status = session.setOption(.init(key: .expectedFrameRate, value: expectedFrameRate as CFNumber))
             }
             videoCodec.frameInterval = videoCodec.settings.frameInterval
             return session

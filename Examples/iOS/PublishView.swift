@@ -1,4 +1,5 @@
 import AVFoundation
+import Charts
 import HaishinKit
 import SwiftUI
 
@@ -45,9 +46,24 @@ struct PublishView: View {
     var body: some View {
         ZStack {
             VStack {
-                MTHKViewRepresentable(previewSource: model)
+                if preference.viewType == .pip {
+                    PiPHKViewRepresentable(previewSource: model)
+                } else {
+                    MTHKViewRepresentable(previewSource: model)
+                }
             }
-            VStack(alignment: .trailing) {
+            VStack {
+                Spacer()
+                Chart(model.stats) {
+                    LineMark(
+                        x: .value("time", $0.date),
+                        y: .value("currentBytesOutPerSecond", $0.currentBytesOutPerSecond)
+                    )
+                }
+                .frame(height: 300)
+                .padding(32)
+            }
+            VStack {
                 HStack(spacing: 16) {
                     if !model.audioSources.isEmpty {
                         Picker("AudioSource", selection: $model.audioSource) {
@@ -55,14 +71,37 @@ struct PublishView: View {
                                 Text(source.description).tag(source)
                             }
                         }
+                        .frame(width: 200)
                         .background(Color.black.opacity(0.2))
                         .cornerRadius(16)
                         .padding(16)
                     }
                     Spacer()
-                    Button(action: { Task {
+                    Button(action: {
+                        model.toggleRecording()
+                    }, label: {
+                        Image(systemName: model.isRecording ?
+                                "recordingtape.circle.fill" :
+                                "recordingtape.circle")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                    })
+                    Button(action: {
+                        model.toggleAudioMuted()
+                    }, label: {
+                        Image(systemName: model.isAudioMuted ?
+                                "microphone.slash.circle" :
+                                "microphone.circle")
+                            .resizable()
+                            .scaledToFit()
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                    })
+                    Button(action: {
                         model.flipCamera()
-                    }}, label: {
+                    }, label: {
                         Image(systemName:
                                 "arrow.trianglehead.2.clockwise.rotate.90.camera")
                             .resizable()
@@ -70,9 +109,9 @@ struct PublishView: View {
                             .foregroundColor(.white)
                             .frame(width: 30, height: 30)
                     })
-                    Button(action: { Task {
+                    Button(action: {
                         model.toggleTorch()
-                    }}, label: {
+                    }, label: {
                         Image(systemName: model.isTorchEnabled ?
                                 "flashlight.on.circle.fill" :
                                 "flashlight.off.circle.fill")
@@ -81,21 +120,24 @@ struct PublishView: View {
                             .foregroundColor(.white)
                             .frame(width: 30, height: 30)
                     })
-                }.padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16.0))
-                Picker("FPS", selection: $model.currentFPS) {
-                    ForEach(FPS.allCases) {
-                        Text($0.rawValue).tag($0)
+                }
+                .frame(height: 50)
+                HStack {
+                    Spacer()
+                    Toggle(isOn: $model.isHDREnabled) {
+                        Text("HDR")
+                    }.frame(width: 120)
+                    Picker("FPS", selection: $model.currentFPS) {
+                        ForEach(FPS.allCases) {
+                            Text($0.rawValue).tag($0)
+                        }
                     }
-                }
-                .onChange(of: model.currentFPS) { tag in
-                    model.setFrameRate(tag.frameRate)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 150)
-                .padding()
-                Spacer()
-            }
-            VStack {
+                    .onChange(of: model.currentFPS) { tag in
+                        model.setFrameRate(tag.frameRate)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 150)
+                }.frame(height: 80)
                 Spacer()
                 TabView(selection: $model.visualEffectItem) {
                     ForEach(VideoEffectItem.allCases) {
@@ -103,15 +145,25 @@ struct PublishView: View {
                     }
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .automatic))
-                .frame(height: 120)
-                .padding(.bottom, 32)
+                .frame(height: 100)
                 .onChange(of: model.visualEffectItem) { tag in
                     model.setVisualEffet(tag)
                 }
-            }
-            VStack {
-                Spacer()
                 HStack {
+                    Slider(
+                        value: $model.videoBitRates,
+                        in: 100...4000,
+                        step: 100
+                    ) {
+                        Text("Video BitRate(kbp)")
+                    } minimumValueLabel: {
+                        Text("100")
+                    } maximumValueLabel: {
+                        Text("4,000")
+                    }
+                    .padding(.leading, 32)
+                    .frame(maxWidth: .infinity)
+                    Text("\(Int(model.videoBitRates))/kbps")
                     Spacer()
                     switch model.readyState {
                     case .connecting:
@@ -141,9 +193,9 @@ struct PublishView: View {
                         .frame(width: 60, height: 60)
                         .background(Color.blue)
                         .cornerRadius(30.0)
-                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 16.0, trailing: 16.0))
+                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 16.0))
                     }
-                }
+                }.frame(maxWidth: .infinity)
             }
         }
         .onAppear {
@@ -157,7 +209,7 @@ struct PublishView: View {
         }.alert(isPresented: $model.isShowError) {
             Alert(
                 title: Text("Error"),
-                message: Text(model.error?.localizedDescription ?? ""),
+                message: Text(String(describing: model.error)),
                 dismissButton: .default(Text("OK"))
             )
         }

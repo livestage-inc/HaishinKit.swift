@@ -1,13 +1,13 @@
 {
-  "originHash" : "ae24d7ed76ce1ad5fc77a530eeded7d0731718e24f1e05e6682e73846d5ca9b0",
+  "originHash" : "0623d92bee87e5013eb796ad9f159d469c5255adc372c70de458149479be7518",
   "pins" : [
     {
       "identity" : "logboard",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/shogo4405/Logboard.git",
       "state" : {
-        "revision" : "272976e1f3e8873e60ffe4b08fe50df48a93751b",
-        "version" : "2.5.0"
+        "revision" : "8f41c63afb903040b77049ee2efa8c257b8c0d50",
+        "version" : "2.6.0"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-docc-plugin",
       "state" : {
-        "revision" : "85e4bb4e1cd62cec64a4b8e769dcefdf0c5b9d64",
-        "version" : "1.4.3"
+        "revision" : "3e4f133a77e644a5812911a0513aeb7288b07d06",
+        "version" : "1.4.5"
       }
     },
     {

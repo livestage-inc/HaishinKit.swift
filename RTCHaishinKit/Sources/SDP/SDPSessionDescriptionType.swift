@@ -1,6 +1,6 @@
 import libdatachannel
 
-enum SDPSessionDescriptionType: String, Sendable {
+public enum SDPSessionDescriptionType: String, Sendable {
     case answer
     case offer
     case pranswer

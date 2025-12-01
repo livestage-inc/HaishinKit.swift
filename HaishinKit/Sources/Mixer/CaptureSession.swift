@@ -8,7 +8,9 @@ protocol CaptureSessionConvertible: Runner {
 
     var isInturreped: AsyncStream<Bool> { get }
     var runtimeError: AsyncStream<AVError> { get }
+    var synchronizationClock: CMClock? { get }
     var isMultiCamSessionEnabled: Bool { get set }
+
     @available(tvOS 17.0, *)
     var isMultitaskingCameraAccessEnabled: Bool { get }
 
@@ -17,69 +19,103 @@ protocol CaptureSessionConvertible: Runner {
     @available(tvOS 17.0, *)
     func detachCapture(_ capture: (any DeviceUnit)?)
     @available(tvOS 17.0, *)
-    func configuration(_ lambda: (_ session: AVCaptureSession) throws -> Void ) rethrows
+    func configuration(_ lambda: (_ session: AVCaptureSession) throws -> Void) rethrows
     @available(tvOS 17.0, *)
     func startRunningIfNeeded()
 }
 
-final class CaptureSession: CaptureSessionConvertible {
-    #if os(iOS) || os(tvOS)
-    static var isMultiCamSupported: Bool {
-        if #available(tvOS 17.0, *) {
-            return AVCaptureMultiCamSession.isMultiCamSupported
-        } else {
-            return false
+#if os(macOS) || os(iOS) || os(visionOS)
+final class CaptureSession {
+    var isMultiCamSessionEnabled: Bool {
+        get {
+            capabilities.isMultiCamSessionEnabled
+        }
+        set {
+            capabilities.isMultiCamSessionEnabled = newValue
         }
     }
-    #elseif os(macOS)
-    static let isMultiCamSupported = true
-    #elseif os(visionOS)
-    static let isMultiCamSupported = false
-    #endif
-
-    #if os(iOS) || os(tvOS)
-    var isMultiCamSessionEnabled = false {
-        didSet {
-            if !Self.isMultiCamSupported {
-                isMultiCamSessionEnabled = false
-                logger.info("This device can't support the AVCaptureMultiCamSession.")
-            }
-        }
-    }
-    @available(tvOS 17.0, *)
-    var isMultitaskingCameraAccessEnabled: Bool {
-        return session.isMultitaskingCameraAccessEnabled
-    }
-
-    #elseif os(macOS)
-    var isMultiCamSessionEnabled = true
-    let isMultitaskingCameraAccessEnabled = true
-    #elseif os(visionOS)
-    var isMultiCamSessionEnabled = false
-    let isMultitaskingCameraAccessEnabled = false
-    #endif
 
     private(set) var isRunning = false
 
-    var isInturreped: AsyncStream<Bool> {
-        AsyncStream { continuation in
-            isInturrepedContinutation = continuation
+    var isMultitaskingCameraAccessEnabled: Bool {
+        capabilities.isMultitaskingCameraAccessEnabled(session)
+    }
+
+    @AsyncStreamedFlow
+    var isInturreped: AsyncStream<Bool>
+
+    @AsyncStreamedFlow
+    var runtimeError: AsyncStream<AVError>
+
+    var synchronizationClock: CMClock? {
+        capabilities.synchronizationClock(session)
+    }
+
+    #if !os(visionOS)
+    var sessionPreset: AVCaptureSession.Preset = .default {
+        didSet {
+            guard sessionPreset != oldValue, session.canSetSessionPreset(sessionPreset) else {
+                return
+            }
+            session.beginConfiguration()
+            session.sessionPreset = sessionPreset
+            session.commitConfiguration()
+        }
+    }
+    private(set) lazy var session: AVCaptureSession = capabilities.makeSession(sessionPreset)
+    #else
+    private(set) lazy var session = AVCaptureSession()
+    #endif
+
+    private lazy var capabilities = Capabilities()
+
+    deinit {
+        if session.isRunning {
+            session.stopRunning()
+        }
+    }
+}
+#elseif os(tvOS)
+final class CaptureSession {
+    var isMultiCamSessionEnabled: Bool {
+        get {
+            capabilities.isMultiCamSessionEnabled
+        }
+        set {
+            capabilities.isMultiCamSessionEnabled = newValue
         }
     }
 
-    var runtimeError: AsyncStream<AVError> {
-        AsyncStream { continutation in
-            runtimeErrorContinutation = continutation
+    private(set) var isRunning = false
+
+    var isMultitaskingCameraAccessEnabled: Bool {
+        if #available(tvOS 17.0, *) {
+            capabilities.isMultitaskingCameraAccessEnabled(session)
+        } else {
+            false
         }
     }
 
-    #if os(tvOS)
+    @AsyncStreamedFlow
+    var isInturreped: AsyncStream<Bool>
+
+    @AsyncStreamedFlow
+    var runtimeError: AsyncStream<AVError>
+
+    var synchronizationClock: CMClock? {
+        if #available(tvOS 17.0, *) {
+            return session.synchronizationClock
+        } else {
+            return nil
+        }
+    }
+
     private var _session: Any?
     /// The capture session instance.
     @available(tvOS 17.0, *)
     var session: AVCaptureSession {
         if _session == nil {
-            _session = makeSession()
+            _session = capabilities.makeSession(sessionPreset)
         }
         return _session as! AVCaptureSession
     }
@@ -102,45 +138,8 @@ final class CaptureSession: CaptureSessionConvertible {
             session.commitConfiguration()
         }
     }
-    #elseif os(visionOS)
-    /// The capture session instance.
-    private(set) lazy var session = AVCaptureSession()
-    #else
-    var sessionPreset: AVCaptureSession.Preset = .default {
-        didSet {
-            guard sessionPreset != oldValue, session.canSetSessionPreset(sessionPreset) else {
-                return
-            }
-            session.beginConfiguration()
-            session.sessionPreset = sessionPreset
-            session.commitConfiguration()
-        }
-    }
 
-    /// The capture session instance.
-    private(set) lazy var session: AVCaptureSession = makeSession()
-    #endif
-
-    @available(tvOS 17.0, *)
-    private var isMultiCamSession: Bool {
-        #if os(iOS) || os(tvOS)
-        return session is AVCaptureMultiCamSession
-        #else
-        return true
-        #endif
-    }
-
-    private var isInturrepedContinutation: AsyncStream<Bool>.Continuation? {
-        didSet {
-            oldValue?.finish()
-        }
-    }
-
-    private var runtimeErrorContinutation: AsyncStream<AVError>.Continuation? {
-        didSet {
-            oldValue?.finish()
-        }
-    }
+    private lazy var capabilities = Capabilities()
 
     deinit {
         guard #available(tvOS 17.0, *) else {
@@ -150,9 +149,13 @@ final class CaptureSession: CaptureSessionConvertible {
             session.stopRunning()
         }
     }
+}
+#endif
 
+extension CaptureSession: CaptureSessionConvertible {
+    // MARK: CaptureSessionConvertible
     @available(tvOS 17.0, *)
-    func configuration(_ lambda: (_ session: AVCaptureSession) throws -> Void ) rethrows {
+    func configuration(_ lambda: (_ session: AVCaptureSession) throws -> Void) rethrows {
         session.beginConfiguration()
         defer {
             session.commitConfiguration()
@@ -216,33 +219,6 @@ final class CaptureSession: CaptureSessionConvertible {
         isRunning = session.isRunning
     }
 
-    #if os(iOS) || os(tvOS)
-    @available(tvOS 17.0, *)
-    private func makeSession() -> AVCaptureSession {
-        let session: AVCaptureSession
-        if isMultiCamSessionEnabled {
-            session = AVCaptureMultiCamSession()
-        } else {
-            session = AVCaptureSession()
-        }
-        if session.canSetSessionPreset(sessionPreset) {
-            session.sessionPreset = sessionPreset
-        }
-        if session.isMultitaskingCameraAccessSupported {
-            session.isMultitaskingCameraAccessEnabled = true
-        }
-        return session
-    }
-    #elseif os(macOS)
-    private func makeSession() -> AVCaptureSession {
-        let session = AVCaptureSession()
-        if session.canSetSessionPreset(sessionPreset) {
-            session.sessionPreset = sessionPreset
-        }
-        return session
-    }
-    #endif
-
     @available(tvOS 17.0, *)
     private func addSessionObservers(_ session: AVCaptureSession) {
         NotificationCenter.default.addObserver(self, selector: #selector(sessionRuntimeError(_:)), name: .AVCaptureSessionRuntimeError, object: session)
@@ -259,7 +235,7 @@ final class CaptureSession: CaptureSessionConvertible {
         NotificationCenter.default.removeObserver(self, name: .AVCaptureSessionInterruptionEnded, object: session)
         #endif
         NotificationCenter.default.removeObserver(self, name: .AVCaptureSessionRuntimeError, object: session)
-        runtimeErrorContinutation = nil
+        _runtimeError.finish()
     }
 
     @available(tvOS 17.0, *)
@@ -269,26 +245,26 @@ final class CaptureSession: CaptureSessionConvertible {
             let errorValue = notification.userInfo?[AVCaptureSessionErrorKey] as? NSError else {
             return
         }
-        runtimeErrorContinutation?.yield(AVError(_nsError: errorValue))
+        _runtimeError.yield(AVError(_nsError: errorValue))
     }
 
     #if os(iOS) || os(tvOS) || os(visionOS)
     @available(tvOS 17.0, *)
     @objc
     private func sessionWasInterrupted(_ notification: Notification) {
-        isInturrepedContinutation?.yield(true)
+        _isInturreped.yield(true)
     }
 
     @available(tvOS 17.0, *)
     @objc
     private func sessionInterruptionEnded(_ notification: Notification) {
-        isInturrepedContinutation?.yield(false)
+        _isInturreped.yield(false)
     }
     #endif
 }
 
 extension CaptureSession: Runner {
-    // MARK: Running
+    // MARK: Runner
     func startRunning() {
         guard !isRunning else {
             return
@@ -317,8 +293,6 @@ extension CaptureSession: Runner {
 }
 
 final class NullCaptureSession: CaptureSessionConvertible {
-    private(set) var isRunning: Bool = false
-
     #if !os(visionOS)
     @available(tvOS 17.0, *)
     var sessionPreset: AVCaptureSession.Preset {
@@ -330,10 +304,17 @@ final class NullCaptureSession: CaptureSessionConvertible {
     }
     #endif
 
-    @AsyncStreamed(false) var isInturreped: AsyncStream<Bool>
-    @AsyncStreamedFlow var runtimeError: AsyncStream<AVError>
-    var isMultiCamSessionEnabled: Bool = false
-    var isMultitaskingCameraAccessEnabled: Bool = false
+    var isMultiCamSessionEnabled = false
+    let isMultitaskingCameraAccessEnabled = false
+    let synchronizationClock: CMClock? = nil
+
+    @AsyncStreamed(false)
+    var isInturreped: AsyncStream<Bool>
+
+    @AsyncStreamedFlow
+    var runtimeError: AsyncStream<AVError>
+
+    private(set) var isRunning = false
 
     @available(tvOS 17.0, *)
     func attachCapture(_ capture: (any DeviceUnit)?) {
@@ -349,10 +330,22 @@ final class NullCaptureSession: CaptureSessionConvertible {
 
     func startRunningIfNeeded() {
     }
+}
 
+extension NullCaptureSession: Runner {
+    // MARK: Runner
     func startRunning() {
+        guard !isRunning else {
+            return
+        }
+        isRunning = true
     }
 
     func stopRunning() {
+        guard isRunning else {
+            return
+        }
+        _runtimeError.finish()
+        isRunning = false
     }
 }

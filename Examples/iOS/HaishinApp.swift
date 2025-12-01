@@ -5,6 +5,8 @@ import RTMPHaishinKit
 import SRTHaishinKit
 import SwiftUI
 
+nonisolated let logger = LBLogger.with("com.haishinkit.HaishinApp")
+
 @main
 struct HaishinApp: App {
     @State private var preference = PreferenceViewModel()
@@ -23,7 +25,11 @@ struct HaishinApp: App {
             await SessionBuilderFactory.shared.register(HTTPSessionFactory())
 
             await RTCLogger.shared.setLevel(.debug)
-            LBLogger(kRTCHaishinKitIdentifier).level = .debug
+            await SRTLogger.shared.setLevel(.debug)
         }
+        LBLogger(kHaishinKitIdentifier).level = .debug
+        LBLogger(kRTCHaishinKitIdentifier).level = .debug
+        LBLogger(kRTMPHaishinKitIdentifier).level = .debug
+        LBLogger(kSRTHaishinKitIdentifier).level = .debug
     }
 }

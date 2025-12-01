@@ -10,4 +10,10 @@ import Testing
         #expect(url.streamName == "live")
         #expect(url.command == "rtmp://localhost/live")
     }
+
+    @Test func query() {
+        let url = RTMPURL(url: URL(string: "rtmp://localhost/live/live?parameter")!)
+        #expect(url.streamName == "live?parameter")
+        #expect(url.command == "rtmp://localhost/live")
+    }
 }

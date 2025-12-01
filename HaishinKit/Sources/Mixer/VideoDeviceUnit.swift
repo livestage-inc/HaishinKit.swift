@@ -12,6 +12,8 @@ public final class VideoDeviceUnit: DeviceUnit {
     public enum Error: Swift.Error {
         /// The frameRate isn’t supported.
         case unsupportedFrameRate
+        /// The dynamic range mode isn't supported.
+        case unsupportedDynamicRangeMode(_ mode: DynamicRangeMode)
     }
 
     /// The output type that this capture video data output..
@@ -41,13 +43,6 @@ public final class VideoDeviceUnit: DeviceUnit {
                 return
             }
             output.alwaysDiscardsLateVideoFrames = true
-            #if os(iOS) || os(macOS) || os(tvOS)
-            if output.availableVideoPixelFormatTypes.contains(colorFormat) {
-                output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: colorFormat)]
-            } else {
-                logger.warn("device doesn't support this color format ", colorFormat, ".")
-            }
-            #endif
         }
     }
     /// The connection from a capture input to a capture output.
@@ -86,10 +81,27 @@ public final class VideoDeviceUnit: DeviceUnit {
     }
     #endif
 
-    private var dataOutput: IOVideoCaptureUnitDataOutput?
+    private var dynamicRangeMode: DynamicRangeMode = .sdr
+    private var dataOutput: VideoCaptureUnitDataOutput?
 
-    init(_ track: UInt8) {
+    init(_ track: UInt8, device: AVCaptureDevice) throws {
         self.track = track
+        input = try AVCaptureDeviceInput(device: device)
+        self.output = AVCaptureVideoDataOutput()
+        self.device = device
+        #if os(iOS)
+        if let output, let port = input?.ports.first(where: { $0.mediaType == .video && $0.sourceDeviceType == device.deviceType && $0.sourceDevicePosition == device.position }) {
+            connection = AVCaptureConnection(inputPorts: [port], output: output)
+        } else {
+            connection = nil
+        }
+        #elseif os(tvOS) || os(macOS)
+        if let output, let port = input?.ports.first(where: { $0.mediaType == .video }) {
+            connection = AVCaptureConnection(inputPorts: [port], output: output)
+        } else {
+            connection = nil
+        }
+        #endif
     }
 
     /// Sets the frame rate of a device capture.
@@ -121,51 +133,21 @@ public final class VideoDeviceUnit: DeviceUnit {
         self.frameRate = frameRate
     }
 
-    func attachDevice(_ device: AVCaptureDevice?, session: some CaptureSessionConvertible, videoUnit: VideoCaptureUnit) throws {
-        setSampleBufferDelegate(nil)
-        session.detachCapture(self)
-        guard let device else {
-            self.device = nil
-            input = nil
-            output = nil
-            connection = nil
+    func setDynamicRangeMode(_ dynamicRangeMode: DynamicRangeMode) throws {
+        guard let device, self.dynamicRangeMode != dynamicRangeMode else {
             return
         }
-        self.device = device
-        input = try AVCaptureDeviceInput(device: device)
-        output = AVCaptureVideoDataOutput()
-        #if os(iOS)
-        if let output, let port = input?.ports.first(where: { $0.mediaType == .video && $0.sourceDeviceType == device.deviceType && $0.sourceDevicePosition == device.position }) {
-            connection = AVCaptureConnection(inputPorts: [port], output: output)
+        try device.lockForConfiguration()
+        defer {
+            device.unlockForConfiguration()
+        }
+        let activeFormat = device.activeFormat
+        if let format = device.formats.filter({ $0.formatDescription.dimensions.size == activeFormat.formatDescription.dimensions.size }).first(where: { $0.formatDescription.mediaSubType.rawValue == dynamicRangeMode.videoFormat }) {
+            device.activeFormat = format
+            self.dynamicRangeMode = dynamicRangeMode
         } else {
-            connection = nil
+            throw Error.unsupportedDynamicRangeMode(dynamicRangeMode)
         }
-        #elseif os(tvOS) || os(macOS)
-        if let output, let port = input?.ports.first(where: { $0.mediaType == .video }) {
-            connection = AVCaptureConnection(inputPorts: [port], output: output)
-        } else {
-            connection = nil
-        }
-        #endif
-        session.attachCapture(self)
-        #if os(iOS) || os(tvOS) || os(macOS)
-        output?.connections.forEach {
-            if $0.isVideoMirroringSupported {
-                $0.isVideoMirrored = isVideoMirrored
-            }
-            #if os(iOS) || os(macOS)
-            if $0.isVideoOrientationSupported {
-                $0.videoOrientation = videoOrientation
-            }
-            #endif
-            #if os(iOS)
-            if $0.isVideoStabilizationSupported {
-                $0.preferredVideoStabilizationMode = preferredVideoStabilizationMode
-            }
-            #endif
-        }
-        #endif
-        setSampleBufferDelegate(videoUnit)
     }
 
     #if os(iOS) || os(tvOS) || os(macOS)
@@ -185,19 +167,34 @@ public final class VideoDeviceUnit: DeviceUnit {
     }
     #endif
 
-    private func setSampleBufferDelegate(_ videoUnit: VideoCaptureUnit?) {
-        if let videoUnit {
-            #if os(iOS) || os(macOS)
-            videoOrientation = videoUnit.videoOrientation
-            #endif
-        }
+    func setSampleBufferDelegate(_ videoUnit: VideoCaptureUnit?) {
         dataOutput = videoUnit?.makeDataOutput(track)
         output?.setSampleBufferDelegate(dataOutput, queue: videoUnit?.lockQueue)
+    }
+
+    func apply() {
+        #if os(iOS) || os(tvOS) || os(macOS)
+        output?.connections.forEach {
+            if $0.isVideoMirroringSupported {
+                $0.isVideoMirrored = isVideoMirrored
+            }
+            #if os(iOS) || os(macOS)
+            if $0.isVideoOrientationSupported {
+                $0.videoOrientation = videoOrientation
+            }
+            #endif
+            #if os(iOS)
+            if $0.isVideoStabilizationSupported {
+                $0.preferredVideoStabilizationMode = preferredVideoStabilizationMode
+            }
+            #endif
+        }
+        #endif
     }
 }
 
 @available(tvOS 17.0, *)
-final class IOVideoCaptureUnitDataOutput: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+final class VideoCaptureUnitDataOutput: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let track: UInt8
     private let videoMixer: VideoMixer<VideoCaptureUnit>
 

@@ -4,7 +4,7 @@ import HaishinKit
 actor HTTPSession: Session {
     var connected: Bool {
         get async {
-            peerConnection.state == .connected
+            peerConnection?.connectionState == .connected
         }
     }
 
@@ -18,14 +18,18 @@ actor HTTPSession: Session {
     private let uri: URL
     private var location: URL?
     private var maxRetryCount: Int = 0
-    private var _stream = MediaStream()
-    private var method: SessionMethod
-    private lazy var peerConnection: RTCPeerConnection = makePeerConnection()
+    private var _stream = RTCStream()
+    private var mode: SessionMode
+    private var configuration: HTTPSessionConfiguration?
+    private var peerConnection: RTCPeerConnection?
 
-    init(uri: URL, method: SessionMethod) {
+    init(uri: URL, mode: SessionMode, configuration: (any SessionConfiguration)?) {
         logger.level = .debug
         self.uri = uri
-        self.method = method
+        self.mode = mode
+        if let configuration = configuration as? HTTPSessionConfiguration {
+            self.configuration = configuration
+        }
     }
 
     func setMaxRetryCount(_ maxRetryCount: Int) {
@@ -37,19 +41,20 @@ actor HTTPSession: Session {
             return
         }
         _readyState.value = .connecting
-        peerConnection = makePeerConnection()
-        switch method {
-        case .ingest:
-            try await _stream.setAudioSettings(.init(format: .opus))
-            await _stream.tracks.forEach { track in
-                peerConnection.addTrack(track)
-            }
+        let peerConnection = try makePeerConnection()
+        switch mode {
+        case .publish:
+            let audioSettings = await _stream.audioSettings
+            try peerConnection.addTrack(AudioStreamTrack(audioSettings), stream: _stream)
+            let videoSettings = await _stream.videoSettings
+            try peerConnection.addTrack(VideoStreamTrack(videoSettings), stream: _stream)
         case .playback:
             await _stream.setDirection(.recvonly)
             try peerConnection.addTrack(.audio, stream: _stream)
             try peerConnection.addTrack(.video, stream: _stream)
         }
         do {
+            self.peerConnection = peerConnection
             try peerConnection.setLocalDesciption(.offer)
             let answer = try await requestOffer(uri, offer: peerConnection.createOffer())
             try peerConnection.setRemoteDesciption(answer, type: .answer)
@@ -73,7 +78,7 @@ actor HTTPSession: Session {
         request.addValue("application/sdp", forHTTPHeaderField: "Content-Type")
         _ = try await URLSession.shared.data(for: request)
         await _stream.close()
-        peerConnection.close()
+        peerConnection?.close()
         self.location = nil
         _readyState.value = .closed
     }
@@ -101,8 +106,8 @@ actor HTTPSession: Session {
         return String(data: data, encoding: .utf8) ?? ""
     }
 
-    private func makePeerConnection() -> RTCPeerConnection {
-        let conneciton = RTCPeerConnection(RTCConfiguration(iceServers: []))
+    private func makePeerConnection() throws -> RTCPeerConnection {
+        let conneciton = try RTCPeerConnection(configuration)
         conneciton.delegate = self
         return conneciton
     }
@@ -110,22 +115,28 @@ actor HTTPSession: Session {
 
 extension HTTPSession: RTCPeerConnectionDelegate {
     // MARK: RTCPeerConnectionDelegate
-    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, didSet gatheringState: RTCGatheringState) {
-    }
-
-    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, didSet state: RTCState) {
+    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, connectionStateChanged state: RTCPeerConnection.ConnectionState) {
         Task {
             if state == .connected {
-                if await method == .ingest {
+                if await mode == .publish {
                     await _stream.setDirection(.sendonly)
                 }
             }
         }
     }
 
-    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, didReceive track: RTCTrack) {
+    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, signalingStateChanged signalingState: RTCPeerConnection.SignalingState) {
     }
 
-    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidated: RTCICECandidate) {
+    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, iceConnectionStateChanged iceConnectionState: RTCPeerConnection.IceConnectionState) {
+    }
+
+    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, iceGatheringStateChanged gatheringState: RTCPeerConnection.IceGatheringState) {
+    }
+
+    nonisolated func peerConnection(_ peerConnection: RTCPeerConnection, gotIceCandidate candidated: RTCIceCandidate) {
+    }
+
+    nonisolated func peerConnection(_ peerConneciton: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {
     }
 }

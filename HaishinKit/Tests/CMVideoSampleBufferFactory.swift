@@ -4,7 +4,7 @@ import Foundation
 enum CMVideoSampleBufferFactory {
     static func makeSampleBuffer(_ data: Data) -> CMSampleBuffer? {
         var blockBuffer: CMBlockBuffer?
-        let status = data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
+        _ = data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
             CMBlockBufferCreateWithMemoryBlock(
                 allocator: kCFAllocatorDefault,
                 memoryBlock: UnsafeMutableRawPointer(mutating: buffer.baseAddress),

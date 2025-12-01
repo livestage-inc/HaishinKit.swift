@@ -29,9 +29,11 @@ final package class NALUnitReader {
         var result: [Data] = []
 
         if !buffer.isNotSync {
-            result.append(Data([0x09, 0x10]))
-            buffer.formatDescription?.parameterSets.forEach {
-                result.append($0)
+            if let formatDescription = buffer.formatDescription {
+                result.append(Data([0x09, 0x10]))
+                formatDescription.parameterSets.forEach {
+                    result.append($0)
+                }
             }
         } else {
             result.append(Data([0x09, 0x30]))

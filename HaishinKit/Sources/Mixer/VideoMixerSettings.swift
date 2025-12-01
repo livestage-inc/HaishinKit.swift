@@ -2,9 +2,9 @@ import Accelerate
 import CoreMedia
 import Foundation
 
-/// Constraints on the audio mixier settings.
+/// Constraints on the video mixier settings.
 public struct VideoMixerSettings: Codable, Sendable {
-    /// The default setting for the stream.
+    /// The default setting for the mixer.
     public static let `default`: VideoMixerSettings = .init()
 
     /// The type of image rendering mode.

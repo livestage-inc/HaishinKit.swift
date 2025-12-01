@@ -7,7 +7,11 @@ struct RTMPURL {
         var pathComponents = url.pathComponents
         pathComponents.removeFirst()
         pathComponents.removeFirst()
-        return pathComponents.joined(separator: "/")
+        if let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.query {
+            return pathComponents.joined(separator: "/") + "?" + query
+        } else {
+            return pathComponents.joined(separator: "/")
+        }
     }
 
     var command: String {

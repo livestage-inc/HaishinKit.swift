@@ -85,6 +85,12 @@ public actor StreamRecorder {
     public var outputURL: URL? {
         return writer?.outputURL
     }
+    /// The current error.
+    public var error: AsyncStream<StreamRecorder.Error> {
+        AsyncStream { continuation in
+            self.continuation = continuation
+        }
+    }
     /// The recording or not.
     public private(set) var isRecording = false
     /// The the movie fragment interval in sec.
@@ -111,7 +117,11 @@ public actor StreamRecorder {
         return settings.count == writer.inputs.count
     }
     private var writer: AVAssetWriter?
-    private var continuation: AsyncStream<Error>.Continuation?
+    private var continuation: AsyncStream<Error>.Continuation? {
+        didSet {
+            oldValue?.finish()
+        }
+    }
     private var writerInputs: [AVMediaType: AVAssetWriterInput] = [:]
     private var audioPresentationTime: CMTime = .zero
     private var videoPresentationTime: CMTime = .zero
@@ -206,6 +216,7 @@ public actor StreamRecorder {
         }
         defer {
             isRecording = false
+            continuation = nil
             self.writer = nil
             self.writerInputs.removeAll()
         }

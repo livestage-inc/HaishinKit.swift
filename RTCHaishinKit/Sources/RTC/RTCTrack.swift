@@ -4,26 +4,21 @@ import Foundation
 import libdatachannel
 
 protocol RTCTrackDelegate: AnyObject {
-    func track(_ track: RTCTrack, didSetOpen open: Bool)
+    func track(_ track: RTCTrack, readyStateChanged readyState: RTCTrack.ReadyState)
     func track(_ track: RTCTrack, didOutput buffer: CMSampleBuffer)
     func track(_ track: RTCTrack, didOutput buffer: AVAudioCompressedBuffer, when: AVAudioTime)
 }
 
-final class RTCTrack: RTCChannel {
-    weak var delegate: (any RTCTrackDelegate)?
-
-    override var isOpen: Bool {
-        didSet {
-            if isOpen {
-                do {
-                    packetizer = try makePacketizer()
-                } catch {
-                    logger.warn(error)
-                }
-            }
-            delegate?.track(self, didSetOpen: isOpen)
-        }
+class RTCTrack: RTCChannel {
+    enum ReadyState {
+        case connecting
+        case open
+        case closing
+        case closed
     }
+
+    let id: Int32
+    weak var delegate: (any RTCTrackDelegate)?
 
     var mid: String {
         do {
@@ -58,31 +53,85 @@ final class RTCTrack: RTCChannel {
         }
     }
 
+    private(set) var readyState: ReadyState = .connecting {
+        didSet {
+            switch readyState {
+            case .connecting:
+                break
+            case .open:
+                do {
+                    packetizer = try makePacketizer()
+                } catch {
+                    logger.warn(error)
+                }
+            case .closing:
+                break
+            case .closed:
+                break
+            }
+            delegate?.track(self, readyStateChanged: readyState)
+        }
+    }
+
     private var packetizer: (any RTPPacketizer)?
+
+    init(id: Int32) throws {
+        self.id = id
+        try RTCError.check(id)
+        do {
+            rtcSetUserPointer(id, Unmanaged.passUnretained(self).toOpaque())
+            try RTCError.check(rtcSetOpenCallback(id) { _, pointer in
+                guard let pointer else { return }
+                Unmanaged<RTCTrack>.fromOpaque(pointer).takeUnretainedValue().readyState = .open
+            })
+            try RTCError.check(rtcSetClosedCallback(id) { _, pointer in
+                guard let pointer else { return }
+                Unmanaged<RTCTrack>.fromOpaque(pointer).takeUnretainedValue().readyState = .closed
+            })
+            try RTCError.check(rtcSetMessageCallback(id) { _, bytes, size, pointer in
+                guard let bytes, let pointer else { return }
+                if 0 <= size {
+                    let data = Data(bytes: bytes, count: Int(size))
+                    Unmanaged<RTCTrack>.fromOpaque(pointer).takeUnretainedValue().didReceiveMessage(data)
+                }
+            })
+            try RTCError.check(rtcSetErrorCallback(id) { _, error, pointer in
+                guard let error, let pointer else { return }
+                Unmanaged<RTCTrack>.fromOpaque(pointer).takeUnretainedValue().errorOccurred(String(cString: error))
+            })
+        } catch {
+            rtcDeleteTrack(id)
+            throw error
+        }
+    }
 
     deinit {
         rtcDeleteTrack(id)
     }
 
-    func append(_ buffer: CMSampleBuffer) {
+    func send(_ buffer: CMSampleBuffer) {
         packetizer?.append(buffer) { packet in
             try? send(packet.data)
         }
     }
 
-    func append(_ buffer: AVAudioCompressedBuffer, when: AVAudioTime) {
+    func send(_ buffer: AVAudioCompressedBuffer, when: AVAudioTime) {
         packetizer?.append(buffer, when: when) { packet in
             try? send(packet.data)
         }
     }
 
-    override func didReceiveMessage(_ message: Data) {
+    func didReceiveMessage(_ message: Data) {
         do {
             let packet = try RTPPacket(message)
             packetizer?.append(packet)
         } catch {
             logger.warn(error)
         }
+    }
+
+    private func errorOccurred(_ error: String) {
+        logger.warn(error)
     }
 
     private func makePacketizer() throws -> (any RTPPacketizer)? {

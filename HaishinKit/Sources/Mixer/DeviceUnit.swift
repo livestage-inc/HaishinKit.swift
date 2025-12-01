@@ -11,5 +11,5 @@ protocol DeviceUnit {
     var device: AVCaptureDevice? { get }
     var connection: AVCaptureConnection? { get }
 
-    init(_ track: UInt8)
+    init(_ track: UInt8, device: AVCaptureDevice) throws
 }

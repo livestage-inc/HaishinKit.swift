@@ -25,7 +25,7 @@ struct PreferenceView: View {
             Section {
                 Picker("Format", selection: $model.audioFormat) {
                     ForEach(AudioCodecSettings.Format.allCases, id: \.self) { format in
-                        Text("\(format)").tag(format)
+                        Text(String(describing: format)).tag(format)
                     }
                 }
             } header: {
@@ -42,6 +42,18 @@ struct PreferenceView: View {
                 }
             } header: {
                 Text("Video Codec Settings")
+            }
+            Section {
+                Picker("View Type", selection: $model.viewType) {
+                    ForEach(ViewType.allCases, id: \.self) { view in
+                        Text(String(describing: view)).tag(view)
+                    }
+                }
+                Toggle(isOn: $model.isGPURendererEnabled) {
+                    Text("Use GPU rendering.")
+                }
+            } header: {
+                Text("Others")
             }
             Section {
                 Button(action: {

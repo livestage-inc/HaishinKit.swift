@@ -31,7 +31,7 @@ extension SDPMediaDescription {
         var kind: String?
         var payload: UInt8?
         var attributes: [Attribute] = []
-        let lines = sdp.split(separator: "\r\n")
+        let lines = sdp.replacingOccurrences(of: "\r\n", with: "\n").split(separator: "\n")
         for line in lines {
             switch true {
             case line.hasPrefix(Self.m):

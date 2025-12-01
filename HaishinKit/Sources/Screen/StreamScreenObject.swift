@@ -6,17 +6,15 @@ import Foundation
 /// An object that manages offscreen rendering a streaming video track source.
 ///
 /// ## Usage
+/// ```swift
 /// var streamScreenObject = StreamScreenObject()
 ///
-/// ```
 /// Task {
 ///   // Register to the Stream's Output observer.
-///   rtmpStream.addOutput(streamScreenObject)
-///   rtmpStream.play("yourStreamName")
+///   stream.addOutput(streamScreenObject)
+///   stream.play("yourStreamName")
 /// }
-/// ```
 ///
-/// ```
 /// Task { @ScreenActor in
 ///  streamScreenObject.layoutMargin = .init(top: 16, left: 0, bottom: 0, right: 16)
 ///  streamScreenObject.size = .init(width: 160 * 2, height: 90 * 2)
@@ -74,14 +72,20 @@ public final class StreamScreenObject: ScreenObject, ChromaKeyProcessable {
     }
 
     override public func makeImage(_ renderer: some ScreenRenderer) -> CGImage? {
+        guard let image: CIImage = makeImage(renderer) else {
+            return nil
+        }
+        return renderer.context.createCGImage(image, from: videoGravity.region(bounds, image: image.extent))
+    }
+
+    override public func makeImage(_ renderer: some ScreenRenderer) -> CIImage? {
         guard let sampleBuffer, let pixelBuffer = sampleBuffer.imageBuffer else {
             return nil
         }
-        let image = CIImage(cvPixelBuffer: pixelBuffer).transformed(by: videoGravity.scale(
+        return CIImage(cvPixelBuffer: pixelBuffer).transformed(by: videoGravity.scale(
             bounds.size,
             image: pixelBuffer.size
         ))
-        return renderer.context.createCGImage(image, from: videoGravity.region(bounds, image: image.extent))
     }
 }
 

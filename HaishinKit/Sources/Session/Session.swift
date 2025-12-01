@@ -2,8 +2,11 @@ import Foundation
 
 package let kSession_maxRetryCount: Int = 3
 
-public enum SessionMethod: Sendable {
-    case ingest
+/// Represents the type of session to establish.
+public enum SessionMode: Sendable {
+    /// A publishing session, used to stream media from the local device to a server or peers.
+    case publish
+    /// A playback session, used to receive and play media streamed from a server or peers.
     case playback
 }
 
@@ -32,7 +35,7 @@ public protocol Session: NetworkConnection {
     var stream: any StreamConvertible { get async }
 
     /// Creates a new session with uri.
-    init(uri: URL, method: SessionMethod)
+    init(uri: URL, mode: SessionMode, configuration: (any SessionConfiguration)?)
 
     /// Sets a max retry count.
     func setMaxRetryCount(_ maxRetryCount: Int)

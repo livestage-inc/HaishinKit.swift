@@ -28,31 +28,17 @@ public final class AudioDeviceUnit: DeviceUnit {
     public private(set) var connection: AVCaptureConnection?
     private var dataOutput: AudioDeviceUnitDataOutput?
 
-    init(_ track: UInt8) {
-        self.track = track
-    }
-
-    func attachDevice(_ device: AVCaptureDevice?, session: (some CaptureSessionConvertible), audioUnit: AudioCaptureUnit) throws {
-        setSampleBufferDelegate(nil)
-        session.detachCapture(self)
-        guard let device else {
-            self.device = nil
-            input = nil
-            output = nil
-            connection = nil
-            return
-        }
-        self.device = device
+    init(_ track: UInt8, device: AVCaptureDevice) throws {
         input = try AVCaptureDeviceInput(device: device)
+        self.track = track
+        self.device = device
         output = AVCaptureAudioDataOutput()
         if let input, let output {
             connection = AVCaptureConnection(inputPorts: input.ports, output: output)
         }
-        session.attachCapture(self)
-        setSampleBufferDelegate(audioUnit)
     }
 
-    private func setSampleBufferDelegate(_ audioUnit: AudioCaptureUnit?) {
+    func setSampleBufferDelegate(_ audioUnit: AudioCaptureUnit?) {
         dataOutput = audioUnit?.makeDataOutput(track)
         output?.setSampleBufferDelegate(dataOutput, queue: audioUnit?.lockQueue)
     }

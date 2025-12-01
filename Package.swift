@@ -16,11 +16,11 @@ let swiftSettings: [SwiftSetting] = [
 let package = Package(
     name: "HaishinKit",
     platforms: [
-        .iOS(.v13),
-        .tvOS(.v13),
-        .visionOS(.v1),
-        .macOS(.v10_15),
-        .macCatalyst(.v14)
+        .iOS(.v15),
+        .tvOS(.v15),
+        .macCatalyst(.v15),
+        .macOS(.v12),
+        .visionOS(.v1)
     ],
     products: [
         .library(name: "HaishinKit", targets: ["HaishinKit"]),
@@ -30,8 +30,8 @@ let package = Package(
         .library(name: "RTCHaishinKit", targets: ["RTCHaishinKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.3"),
-        .package(url: "https://github.com/shogo4405/Logboard.git", "2.5.0"..<"2.6.0")
+        .package(url: "https://github.com/swiftlang/swift-docc-plugin", from: "1.4.5"),
+        .package(url: "https://github.com/shogo4405/Logboard.git", "2.6.0"..<"2.7.0")
     ],
     targets: [
         .binaryTarget(

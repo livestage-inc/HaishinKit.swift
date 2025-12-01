@@ -48,6 +48,7 @@ Task {
   await mixer.addOutput(stream)
   await mixer.startRunning()
 }
+```
 
 ### Session API
 Provides a unified API for implementing clients with RTMP and SRT. Retry handling is also performed internally by the API.
@@ -65,11 +66,14 @@ Task {
 ```
 
 #### Make Session
+**RTMP**
+Please provide the RTMP connection URL combined with the streamName.
 ```swift
-let session = try await SessionBuilderFactory.shared.make(URL(string: "rtmp://hostname/live/live"))
-  .setMode(.ingest)
+let session = try await SessionBuilderFactory.shared.make(URL(string: "rtmp://hostname/appName/stramName"))
+  .setMode(.publish)
   .build()
 ```
+**SRT**
 ```swift
 let session = try await SessionBuilderFactory.shared.make(URL(string: "srt://hostname:448?stream=xxxxx"))
   .setMode(.playback)

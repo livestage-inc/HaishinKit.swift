@@ -10,7 +10,10 @@ import Testing
         let reader = ADTSReader()
         reader.read(data)
         var iterator = reader.makeIterator()
+        var ranges: [Int] = []
         while let range = iterator.next() {
+            ranges.append(range)
         }
+        #expect(ranges == [371, 369, 348, 291, 315, 307, 360, 374])
     }
 }

@@ -17,7 +17,7 @@ actor SRTSession: Session {
     }
 
     private let uri: URL
-    private let method: SessionMethod
+    private let mode: SessionMode
     private var retryCount: Int = 0
     private var maxRetryCount = kSession_maxRetryCount
     private lazy var connection = SRTConnection()
@@ -31,9 +31,9 @@ actor SRTSession: Session {
         }
     }
 
-    init(uri: URL, method: SessionMethod) {
+    init(uri: URL, mode: SessionMode, configuration: (any SessionConfiguration)?) {
         self.uri = uri
-        self.method = method
+        self.mode = mode
     }
 
     func setMaxRetryCount(_ maxRetryCount: Int) {
@@ -74,10 +74,10 @@ actor SRTSession: Session {
         }
         _readyState.value = .open
         retryCount = 0
-        switch method {
+        switch mode {
         case .playback:
             await _stream.play()
-        case .ingest:
+        case .publish:
             await _stream.publish()
         }
         disconnctedTask = Task {

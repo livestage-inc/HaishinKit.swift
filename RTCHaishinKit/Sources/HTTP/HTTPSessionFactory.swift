@@ -7,7 +7,7 @@ public struct HTTPSessionFactory: SessionFactory {
     public init() {
     }
 
-    public func make(_ uri: URL, method: SessionMethod) -> any Session {
-        return HTTPSession(uri: uri, method: method)
+    public func make(_ uri: URL, mode: SessionMode, configuration: (any SessionConfiguration)?) -> any Session {
+        return HTTPSession(uri: uri, mode: mode, configuration: configuration)
     }
 }

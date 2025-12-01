@@ -1,6 +1,6 @@
 import libdatachannel
 
-enum RTCDirection: Sendable {
+public enum RTCDirection: Sendable {
     case unknown
     case sendrecv
     case sendonly

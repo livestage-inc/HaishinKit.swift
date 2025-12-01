@@ -1,20 +1,32 @@
 import Foundation
 
 @propertyWrapper
-package struct AsyncStreamedFlow<T: Sendable & Equatable> {
+package struct AsyncStreamedFlow<T: Sendable> {
     package var wrappedValue: AsyncStream<T> {
-        get {
+        mutating get {
+            let (stream, continuation) = AsyncStream.makeStream(of: T.self, bufferingPolicy: bufferingPolicy)
+            self.continuation = continuation
             return stream
         }
         @available(*, unavailable)
         set { _ = newValue }
     }
-    private let stream: AsyncStream<T>
-    private let continuation: AsyncStream<T>.Continuation
+    private let bufferingPolicy: AsyncStream<T>.Continuation.BufferingPolicy
+    private var continuation: AsyncStream<T>.Continuation? {
+        didSet {
+            oldValue?.finish()
+        }
+    }
 
     package init(_ bufferingPolicy: AsyncStream<T>.Continuation.BufferingPolicy = .unbounded) {
-        let (stream, continuation) = AsyncStream.makeStream(of: T.self, bufferingPolicy: bufferingPolicy)
-        self.stream = stream
-        self.continuation = continuation
+        self.bufferingPolicy = bufferingPolicy
+    }
+
+    package func yield(_ value: T) {
+        continuation?.yield(value)
+    }
+
+    package mutating func finish() {
+        continuation = nil
     }
 }

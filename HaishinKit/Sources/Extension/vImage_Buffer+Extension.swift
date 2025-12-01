@@ -21,7 +21,7 @@ extension vImage_Buffer {
         let cvImageFormat = vImageCVImageFormat_CreateWithCVPixelBuffer(cvPixelBuffer).takeRetainedValue()
         vImageCVImageFormat_SetColorSpace(cvImageFormat, CGColorSpaceCreateDeviceRGB())
         defer {
-            if let dictionary = CVBufferGetAttachments(cvPixelBuffer, .shouldNotPropagate) {
+            if let dictionary = CVBufferCopyAttachments(cvPixelBuffer, .shouldNotPropagate) {
                 CVBufferSetAttachments(cvPixelBuffer, dictionary, .shouldPropagate)
             }
         }

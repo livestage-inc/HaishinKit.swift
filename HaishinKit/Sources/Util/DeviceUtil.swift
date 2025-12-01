@@ -70,14 +70,4 @@ public enum DeviceUtil {
         return !DeviceUtil.isHeadphoneConnected(ports)
     }
 }
-#elseif os(macOS)
-/// The namespace of DeviceUtil.
-public enum DeviceUtil {
-    /// Lookup device by localizedName and mediaType.
-    public static func device(withLocalizedName: String, mediaType: AVMediaType) -> AVCaptureDevice? {
-        AVCaptureDevice.devices().first {
-            $0.hasMediaType(mediaType) && $0.localizedName == withLocalizedName
-        }
-    }
-}
 #endif

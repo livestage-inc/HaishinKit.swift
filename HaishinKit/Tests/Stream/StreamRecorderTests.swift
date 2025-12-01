@@ -15,7 +15,7 @@ import Testing
     @Test func startRunning_fileName() async throws {
         let recorder = StreamRecorder()
         try? await recorder.startRecording(URL(string: "dir/sample.mp4"))
-        let moviesDirectory = await recorder.moviesDirectory
+        _ = await recorder.moviesDirectory
         // $moviesDirectory/dir/sample.mp4
         #expect(((await recorder.outputURL?.path.contains("dir/sample.mp4")) != nil))
     }

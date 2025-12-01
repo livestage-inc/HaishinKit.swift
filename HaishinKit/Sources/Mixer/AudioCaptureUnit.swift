@@ -45,7 +45,12 @@ final class AudioCaptureUnit: CaptureUnit {
     private var _devices: [UInt8: Any] = [:]
     @available(tvOS 17.0, *)
     var devices: [UInt8: AudioDeviceUnit] {
-        return _devices as! [UInt8: AudioDeviceUnit]
+        set {
+            _devices = newValue
+        }
+        get {
+            _devices as! [UInt8: AudioDeviceUnit]
+        }
     }
     #elseif os(iOS) || os(macOS)
     var devices: [UInt8: AudioDeviceUnit] = [:]
@@ -54,43 +59,30 @@ final class AudioCaptureUnit: CaptureUnit {
     private let session: (any CaptureSessionConvertible)
     private var continutation: AsyncStream<(AVAudioPCMBuffer, AVAudioTime)>.Continuation?
 
-    init(_ session: (some CaptureSessionConvertible)) {
+    init(_ session: (some CaptureSessionConvertible), isMultiTrackAudioMixingEnabled: Bool) {
         self.session = session
+        self.isMultiTrackAudioMixingEnabled = isMultiTrackAudioMixingEnabled
     }
 
     #if os(iOS) || os(macOS) || os(tvOS)
     @available(tvOS 17.0, *)
     func attachAudio(_ track: UInt8, device: AVCaptureDevice?, configuration: AudioDeviceConfigurationBlock?) throws {
         try session.configuration { _ in
-            for capture in devices.values where capture.device == device {
-                try? capture.attachDevice(nil, session: session, audioUnit: self)
+            session.detachCapture(devices[track])
+            devices[track] = nil
+            if let device {
+                let capture = try AudioDeviceUnit(track, device: device)
+                capture.setSampleBufferDelegate(self)
+                try? configuration?(capture)
+                session.attachCapture(capture)
+                devices[track] = capture
             }
-            guard let capture = self.device(for: track) else {
-                return
-            }
-            try? configuration?(capture)
-            try capture.attachDevice(device, session: session, audioUnit: self)
         }
     }
 
     @available(tvOS 17.0, *)
     func makeDataOutput(_ track: UInt8) -> AudioDeviceUnitDataOutput {
         return .init(track: track, audioMixer: audioMixer)
-    }
-
-    @available(tvOS 17.0, *)
-    private func device(for track: UInt8) -> AudioDeviceUnit? {
-        #if os(tvOS)
-        if _devices[track] == nil {
-            _devices[track] = .init(track)
-        }
-        return _devices[track] as? AudioDeviceUnit
-        #else
-        if devices[track] == nil {
-            devices[track] = .init(track)
-        }
-        return devices[track]
-        #endif
     }
     #endif
 
