@@ -102,6 +102,7 @@
 		BC4B7DDD2E86D06E00973BD7 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Info.plist,
 				Screencast/Info.plist,
 				Screencast/SampleHandler.swift,
 			);
@@ -775,6 +776,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = iOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HaishinKit;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is requested for live streaming.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is requested for live streaming.";
@@ -831,6 +833,7 @@
 				ENABLE_PREVIEWS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = iOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = HaishinKit;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is requested for live streaming.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is requested for live streaming.";
@@ -1056,6 +1059,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_ASSET_PATHS = macOS/SampleVideo_360x240_5mb.mp4;
 				DEVELOPMENT_TEAM = SUEQ2SZ2L5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -1099,6 +1103,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = macOS/SampleVideo_360x240_5mb.mp4;
 				DEVELOPMENT_TEAM = SUEQ2SZ2L5;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;

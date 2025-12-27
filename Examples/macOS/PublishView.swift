@@ -61,49 +61,41 @@ struct PublishView: View {
                 .padding()
                 Spacer()
             }
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    switch model.readyState {
-                    case .connecting:
-                        Spacer()
-                    case .open:
-                        Button(action: {
-                            model.stopPublishing()
-                        }, label: {
-                            Image(systemName: "stop.circle")
-                                .foregroundColor(.white)
-                                .font(.system(size: 24))
-                        })
-                        .frame(width: 60, height: 60)
-                        .background(Color.blue)
-                        .cornerRadius(30.0)
-                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 16.0, trailing: 16.0))
-                    case .closing:
-                        Spacer()
-                    case .closed:
-                        Button(action: {
-                            model.startPublishing(preference)
-                        }, label: {
-                            Image(systemName: "record.circle")
-                                .foregroundColor(.white)
-                                .font(.system(size: 24))
-                        })
-                        .frame(width: 60, height: 60)
-                        .background(Color.blue)
-                        .cornerRadius(30.0)
-                        .padding(EdgeInsets(top: 0, leading: 0, bottom: 16.0, trailing: 16.0))
-                    }
-                }
-            }
         }
         .onAppear {
             model.startRunning(preference)
         }
         .onDisappear {
             model.stopRunning()
-        }.alert(isPresented: $model.isShowError) {
+        }
+        .navigationTitle("Publish")
+        .toolbar {
+            switch model.readyState {
+            case .connecting:
+                ToolbarItem(placement: .primaryAction) {
+                }
+            case .open:
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        model.stopPublishing()
+                    }) {
+                        Image(systemName: "stop.circle")
+                    }
+                }
+            case .closed:
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        model.startPublishing(preference)
+                    }) {
+                        Image(systemName: "record.circle")
+                    }
+                }
+            case .closing:
+                ToolbarItem(placement: .primaryAction) {
+                }
+            }
+        }
+        .alert(isPresented: $model.isShowError) {
             Alert(
                 title: Text("Error"),
                 message: Text(model.error?.localizedDescription ?? ""),

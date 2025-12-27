@@ -15,14 +15,7 @@ final class PublishViewModel: ObservableObject {
     private var tasks: [Task<Void, Swift.Error>] = []
     private var session: (any Session)?
     private var currentPosition: AVCaptureDevice.Position = .back
-    @ScreenActor private var videoScreenObject: VideoTrackScreenObject?
     @ScreenActor private var currentVideoEffect: VideoEffect?
-
-    init() {
-        Task { @ScreenActor in
-            videoScreenObject = VideoTrackScreenObject()
-        }
-    }
 
     func startPublishing(_ preference: PreferenceViewModel) {
         Task {
@@ -105,17 +98,18 @@ final class PublishViewModel: ObservableObject {
             await makeSession(preference)
         }
         Task { @ScreenActor in
-            guard let videoScreenObject else {
-                return
+            if await preference.isGPURendererEnabled {
+                await mixer.screen.isGPURendererEnabled = true
+            } else {
+                await mixer.screen.isGPURendererEnabled = false
             }
-            videoScreenObject.cornerRadius = 16.0
-            videoScreenObject.track = 1
-            videoScreenObject.horizontalAlignment = .right
-            videoScreenObject.layoutMargin = .init(top: 16, left: 0, bottom: 0, right: 16)
-            videoScreenObject.size = .init(width: 160 * 2, height: 90 * 2)
+            let assetScreenObject = AssetScreenObject()
+            assetScreenObject.size = .init(width: 180, height: 180)
+            assetScreenObject.layoutMargin = .init(top: 16, left: 16, bottom: 0, right: 0)
+            try? assetScreenObject.startReading(AVAsset(url: URL(fileURLWithPath: Bundle.main.path(forResource: "SampleVideo_360x240_5mb", ofType: "mp4") ?? "")))
+            try? await mixer.screen.addChild(assetScreenObject)
             await mixer.screen.size = .init(width: 1280, height: 720)
             await mixer.screen.backgroundColor = NSColor.black.cgColor
-            try? await mixer.screen.addChild(videoScreenObject)
         }
     }
 
@@ -123,32 +117,12 @@ final class PublishViewModel: ObservableObject {
         Task {
             await mixer.stopRunning()
             try? await mixer.attachAudio(nil)
-            try? await mixer.attachVideo(nil, track: 0)
-            try? await mixer.attachVideo(nil, track: 1)
+            try? await mixer.attachVideo(nil)
             if let session {
                 await mixer.removeOutput(session.stream)
             }
             tasks.forEach { $0.cancel() }
             tasks.removeAll()
-        }
-    }
-
-    func flipCamera() {
-        Task {
-            var videoMixerSettings = await mixer.videoMixerSettings
-            if videoMixerSettings.mainTrack == 0 {
-                videoMixerSettings.mainTrack = 1
-                await mixer.setVideoMixerSettings(videoMixerSettings)
-                Task { @ScreenActor in
-                    videoScreenObject?.track = 0
-                }
-            } else {
-                videoMixerSettings.mainTrack = 0
-                await mixer.setVideoMixerSettings(videoMixerSettings)
-                Task { @ScreenActor in
-                    videoScreenObject?.track = 1
-                }
-            }
         }
     }
 
@@ -161,13 +135,6 @@ final class PublishViewModel: ObservableObject {
                 currentVideoEffect = videoEffect
                 _ = await mixer.screen.registerVideoEffect(videoEffect)
             }
-        }
-    }
-
-    func toggleTorch() {
-        Task {
-            await mixer.setTorchEnabled(!isTorchEnabled)
-            isTorchEnabled.toggle()
         }
     }
 
