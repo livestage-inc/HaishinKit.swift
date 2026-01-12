@@ -10,6 +10,8 @@ final class VideoCaptureUnit: CaptureUnit {
 
     let lockQueue = DispatchQueue(label: "com.haishinkit.HaishinKit.VideoCaptureUnit.lock")
 
+    private(set) var isSuspended = false
+
     var mixerSettings: VideoMixerSettings {
         get {
             return videoMixer.settings
@@ -138,24 +140,30 @@ final class VideoCaptureUnit: CaptureUnit {
     #endif
 
     @available(tvOS 17.0, *)
-    func setBackgroundMode(_ background: Bool) {
-        guard !session.isMultitaskingCameraAccessEnabled else {
-            return
-        }
-        if background {
-            for capture in devices.values {
-                session.detachCapture(capture)
-            }
-        } else {
-            for capture in devices.values {
-                session.attachCapture(capture)
-            }
-        }
+    func makeDataOutput(_ track: UInt8) -> VideoCaptureUnitDataOutput {
+        return .init(track: track, videoMixer: videoMixer)
     }
 
     @available(tvOS 17.0, *)
-    func makeDataOutput(_ track: UInt8) -> VideoCaptureUnitDataOutput {
-        return .init(track: track, videoMixer: videoMixer)
+    func suspend() {
+        guard !isSuspended else {
+            return
+        }
+        for capture in devices.values {
+            session.detachCapture(capture)
+        }
+        isSuspended = true
+    }
+
+    @available(tvOS 17.0, *)
+    func resume() {
+        guard isSuspended else {
+            return
+        }
+        for capture in devices.values {
+            session.attachCapture(capture)
+        }
+        isSuspended = false
     }
 
     func finish() {
