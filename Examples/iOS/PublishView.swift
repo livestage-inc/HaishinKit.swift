@@ -273,7 +273,12 @@ struct PublishView: View {
     var body: some View {
         ZStack {
             VStack {
-                MTHKViewRepresentable(previewSource: model, videoGravity: .resizeAspectFill)
+                switch preference.viewType {
+                case .metal:
+                    MTHKViewRepresentable(previewSource: model, videoGravity: .resizeAspectFill)
+                case .pip:
+                    PiPHKViewRepresentable(previewSource: model, videoGravity: .resizeAspectFill)
+                }
             }
 
             if model.isLoading {
@@ -486,31 +491,31 @@ struct PublishView: View {
 
                         HStack(spacing: 6) {
                             SmallIconButton(icon: model.isRecording ? "record.circle.fill" : "record.circle",
-                                           color: model.isRecording ? .orange : .white) {
+                                            color: model.isRecording ? .orange : .white) {
                                 model.toggleRecording()
                             }
                             .disabled(model.readyState != .open)
                             .opacity(model.readyState == .open ? 1.0 : 0.4)
 
                             SmallIconButton(icon: model.isAudioMuted ? "mic.slash.fill" : "mic.fill",
-                                           color: model.isAudioMuted ? .red : .white) {
+                                            color: model.isAudioMuted ? .red : .white) {
                                 model.toggleAudioMuted()
                             }
 
                             SmallIconButton(icon: "arrow.triangle.2.circlepath.camera",
-                                           color: .white) {
+                                            color: .white) {
                                 model.flipCamera()
                             }
 
                             SmallIconButton(icon: model.isTorchEnabled ? "flashlight.on.fill" : "flashlight.off.fill",
-                                           color: model.isTorchEnabled ? .yellow : .white) {
+                                            color: model.isTorchEnabled ? .yellow : .white) {
                                 model.toggleTorch()
                             }
                             .disabled(model.currentCamera == "Front")
                             .opacity(model.currentCamera == "Front" ? 0.4 : 1.0)
 
                             SmallIconButton(icon: model.isDualCameraEnabled ? "rectangle.on.rectangle.fill" : "rectangle.on.rectangle",
-                                           color: model.isDualCameraEnabled ? .cyan : .white) {
+                                            color: model.isDualCameraEnabled ? .cyan : .white) {
                                 model.toggleDualCamera()
                             }
                         }

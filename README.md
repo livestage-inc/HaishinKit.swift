@@ -8,8 +8,6 @@
 
 * Camera and Microphone streaming library via RTMP and SRT for iOS, macOS, tvOS and visionOS.
 * 10th Anniversary🎖️In development for 10 years, with 2,778 commits and 163 releases. Thank you. Since Aug 2, 2015.
-* If you want to support e-mail based communication without GitHub.
-  * Consulting fee is [$50](https://www.paypal.me/shogo4405/50USD)/1 incident. I'm able to response a few days.
 
 ## 💖 Sponsors
 Do you need additional support? Technical support on Issues and Discussions is provided only to contributors and academic researchers of HaishinKit. By becoming a sponsor, I can provide the support you need.
